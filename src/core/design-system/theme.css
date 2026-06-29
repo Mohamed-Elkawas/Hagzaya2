@@ -1,0 +1,357 @@
+/*
+ * Hagzaya Design System — Tailwind v4 @theme layer
+ * Tokens extracted from Stitch Project ID: 12452470023945245549
+ * Material Design 3 color system + custom utilities
+ */
+
+/* ─── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@200..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap");
+
+@import "tailwindcss";
+
+/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
+@theme {
+  /* Brand Colors */
+  --color-primary: #006b20;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #00872a;
+  --color-on-primary-container: #f7fff1;
+  --color-primary-fixed: #88fb8c;
+  --color-primary-fixed-dim: #6cde73;
+  --color-on-primary-fixed: #002105;
+  --color-on-primary-fixed-variant: #005316;
+  --color-inverse-primary: #6cde73;
+  --color-surface-tint: #006e21;
+
+  /* Surface Colors */
+  --color-surface: #f8faf9;
+  --color-surface-bright: #f8faf9;
+  --color-surface-dim: #d8dada;
+  --color-surface-variant: #e1e3e2;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f3;
+  --color-surface-container: #eceeed;
+  --color-surface-container-high: #e6e9e8;
+  --color-surface-container-highest: #e1e3e2;
+  --color-inverse-surface: #2e3131;
+  --color-inverse-on-surface: #eff1f0;
+
+  /* Text / On-Surface */
+  --color-on-surface: #191c1c;
+  --color-on-surface-variant: #3e4a3c;
+  --color-on-background: #191c1c;
+  --color-background: #f8faf9;
+
+  /* Secondary */
+  --color-secondary: #516166;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #d4e5eb;
+  --color-on-secondary-container: #57676c;
+  --color-secondary-fixed: #d4e5eb;
+  --color-secondary-fixed-dim: #b8c9cf;
+  --color-on-secondary-fixed: #0e1e22;
+  --color-on-secondary-fixed-variant: #3a494e;
+
+  /* Tertiary */
+  --color-tertiary: #535f56;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #6b786e;
+  --color-on-tertiary-container: #f6fff5;
+  --color-tertiary-fixed: #d9e6da;
+  --color-tertiary-fixed-dim: #bdcabe;
+  --color-on-tertiary-fixed: #131e17;
+  --color-on-tertiary-fixed-variant: #3e4a41;
+
+  /* Outline */
+  --color-outline: #6e7a6b;
+  --color-outline-variant: #bdcab8;
+
+  /* Error */
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Border Radius */
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Spacing tokens */
+  --spacing-stack-sm: 0.5rem;
+  --spacing-stack-md: 1rem;
+  --spacing-stack-lg: 2rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-margin-mobile: 1rem;
+  --spacing-margin-desktop: 2rem;
+
+  /* Font Families */
+  --font-geist: "Geist", system-ui, sans-serif;
+  --font-cairo: "Cairo", system-ui, sans-serif;
+
+  /* Font Sizes */
+  --text-headline-xl: 2.5rem;
+  --text-headline-lg: 2rem;
+  --text-headline-md: 1.5rem;
+  --text-headline-lg-mobile: 1.5rem;
+  --text-body-lg: 1.125rem;
+  --text-body-md: 1rem;
+  --text-body-sm: 0.875rem;
+  --text-label-md: 0.875rem;
+}
+
+/* ─── Global Resets ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: #f6f8f7;
+  font-family: var(--font-geist);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[dir="rtl"] body,
+html[lang="ar"] body {
+  font-family: var(--font-cairo);
+}
+
+#root {
+  min-height: 100svh;
+  width: 100%;
+  margin: 0;
+  border: none;
+  text-align: initial;
+  display: block;
+}
+
+/* ─── Material Symbols ───────────────────────────────────────────────────────── */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* ─── Utility Classes ────────────────────────────────────────────────────────── */
+
+/* Card container matching Stitch specs */
+.responsive-card {
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(220, 229, 221, 0.6);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 1px 3px rgba(0, 107, 32, 0.04),
+    0 8px 24px rgba(0, 107, 32, 0.06),
+    0 32px 64px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(10px);
+}
+
+/* Standard card (slightly less radius) */
+.auth-card {
+  background: #ffffff;
+  border: 1px solid rgba(220, 229, 221, 0.6);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 107, 32, 0.04);
+}
+
+/* Primary action button */
+.responsive-button {
+  background-color: #006b20;
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.responsive-button:hover {
+  background-color: #00872a;
+  box-shadow: 0 4px 16px rgba(0, 107, 32, 0.3);
+  transform: translateY(-1px);
+}
+
+.responsive-button:active {
+  transform: scale(0.98);
+}
+
+.responsive-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Role tab states */
+.role-tab-active {
+  background-color: #e8f5e9;
+  border: 2px solid #0b8f2f !important;
+  color: #006b20;
+}
+
+.role-tab-inactive {
+  background-color: #ffffff;
+  border: 2px solid transparent;
+  color: #3e4a3c;
+}
+
+/* Step progress bar segments */
+.step-active {
+  background-color: #0b8f2f;
+}
+
+.step-inactive {
+  background-color: #dce5dd;
+}
+
+/* Position grid card: active state */
+.position-card-active {
+  border: 2px solid #006b20 !important;
+  background-color: #e8f5e9;
+  color: #006b20;
+}
+
+.position-card-inactive {
+  border: 1px solid rgba(189, 202, 184, 0.6);
+  background-color: #ffffff;
+  color: #3e4a3c;
+}
+
+/* Skill pill states */
+.skill-pill-active {
+  background-color: #006b20;
+  color: #ffffff;
+}
+
+.skill-pill-inactive {
+  background-color: #ffffff;
+  border: 1px solid rgba(189, 202, 184, 0.8);
+  color: #3e4a3c;
+}
+
+/* OTP input cell */
+.otp-cell {
+  width: 3rem;
+  height: 3.5rem;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  background: #f8faf9;
+  border: 1px solid #6e7a6b;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.otp-cell:focus {
+  border-color: #006b20;
+  box-shadow: 0 0 0 3px rgba(0, 107, 32, 0.15);
+  background: #ffffff;
+}
+
+.otp-cell.filled {
+  border-color: #0b8f2f;
+  background: #ffffff;
+}
+
+/* Form input base style */
+.form-input {
+  width: 100%;
+  background: #f8faf9;
+  border: 1px solid rgba(189, 202, 184, 0.6);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #191c1c;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: #006b20;
+  box-shadow: 0 0 0 3px rgba(0, 107, 32, 0.1);
+  background: #ffffff;
+}
+
+.form-input::placeholder {
+  color: rgba(110, 122, 107, 0.5);
+}
+
+/* Shimmer skeleton animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #eceeed 25%,
+    #f8faf9 50%,
+    #eceeed 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+/* Language switcher button */
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(189, 202, 184, 0.4);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3e4a3c;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.lang-switcher:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 107, 32, 0.3);
+}
+
+/* Background decorative blobs */
+.bg-blob {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 9999px;
+  filter: blur(80px);
+}
+
+/* ─── Typography Utilities ───────────────────────────────────────────────────── */
+.font-ar {
+  font-family: var(--font-cairo);
+  line-height: 1.8; /* leading-loose equivalent for Arabic */
+}
+
+.font-en {
+  font-family: var(--font-geist);
+  line-height: 1.5; /* leading-normal equivalent for English */
+}
