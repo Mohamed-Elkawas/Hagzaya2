@@ -54,7 +54,15 @@ export function useLoginForm(): UseLoginFormReturn {
   )
 
   const setRole = useCallback((role: UserRole) => {
-    setFormState((prev) => ({ ...prev, role }))
+    setFormState((prev) => {
+      // الـ Admin يفضل دائماً أن يسجل بالبريد الإلكتروني تلقائياً لتسهيل التجربة
+      const defaultMethod = role.toLowerCase() === 'admin' ? 'email' : prev.loginMethod;
+      return {
+        ...prev,
+        role,
+        loginMethod: defaultMethod
+      };
+    })
   }, [])
 
   const setLoginMethod = useCallback((method: LoginMethod) => {
@@ -96,17 +104,29 @@ export function useLoginForm(): UseLoginFormReturn {
         const response = await loginRequest(
           formState.identifier,
           formState.password,
-          formState.loginMethod
+          formState.loginMethod,
+          formState.role
         )
 
-        // 1. تخزين التوكن في الـ localStorage
-        localStorage.setItem('hagzaya_token', response.token)
+        const responseData = (response as any).data || response;
+        const token = responseData?.token;
+        const returnedRole = responseData?.role || formState.role;
 
-        // 2. تخزين الـ role المختار للرجوع إليه عند الحاجة
-        localStorage.setItem('hagzaya_role', formState.role)
+        if (!token) {
+          throw new Error('لم يتم استلام رمز الدخول (Token) من السيرفر بشكل صحيح.');
+        }
 
-        // 3. الفحص الذكي للـ Role والتوجيه للوحة التحكم الصحيحة المعتمدة بالبيزنس
-        if (formState.role === 'owner') {
+        // 1. تخزين البيانات بشكل سليم
+        localStorage.setItem('hagzaya_token', token)
+        localStorage.setItem('hagzaya_role', returnedRole)
+
+        // 2. الفحص الذكي والآمن بتحويل النص لحروف صغيرة لحل أزمة (Admin vs admin)
+        const normalizedRole = String(returnedRole).toLowerCase();
+
+        if (normalizedRole === 'admin') {
+          toast.success('مرحباً بك في لوحة تحكم المسؤول (Admin)')
+          navigate('/admin/dashboard')
+        } else if (normalizedRole === 'owner') {
           toast.success('مرحباً بك في لوحة تحكم مالك الملعب')
           navigate('/owner/dashboard')
         } else {
@@ -123,6 +143,8 @@ export function useLoginForm(): UseLoginFormReturn {
           else if (errorData.message) message = errorData.message
           else if (errorData.title) message = errorData.title
           else if (errorData.errors) message = JSON.stringify(errorData.errors)
+        } else if (err.message) {
+          message = err.message
         }
 
         setServerError(message)
@@ -131,7 +153,6 @@ export function useLoginForm(): UseLoginFormReturn {
         setIsLoading(false)
       }
     },
-    // تم إضافة formState.role لضمان تحديث دالة الـ callback عند تغيير الـ Tabs في الـ UI
     [formState, navigate],
   )
 

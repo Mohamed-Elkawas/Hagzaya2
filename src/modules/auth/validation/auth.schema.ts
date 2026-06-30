@@ -15,7 +15,7 @@ export const loginSchema = z.object({
   password: z
     .string()
     .min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
-  role: z.enum(['player', 'owner']),
+  role: z.enum(['player', 'owner', 'Admin', 'admin']),
 })
 
 export type LoginSchemaType = z.infer<typeof loginSchema>

@@ -1,5 +1,4 @@
-export type UserRole = 'player' | 'owner'
-
+export type UserRole = 'player' | 'owner' | 'Admin' | 'admin';
 export type LoginMethod = 'phone' | 'email'
 
 export type PlayerPosition =

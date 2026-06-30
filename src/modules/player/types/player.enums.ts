@@ -1,24 +1,25 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Mirrors backend Hagzaya.Domain.Enums exactly.
+// Mirrors backend Hagzaya.Domain.Enums exactly (Strings instead of Numbers)
 // Project rule: no `enum` keyword — `as const` objects + derived union types
-// survive verbatimModuleSyntax / isolatedModules and tree-shake like plain values.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const Gender = {
-    Male: 0,
-    Female: 1,
+    Male: 'Male',
+    Female: 'Female',
 } as const;
 export type Gender = (typeof Gender)[keyof typeof Gender];
 
 export const Position = {
-    Goalkeeper: 0,
-    Defender: 1,
-    Midfielder: 2,
-    Winger: 3,
-    Striker: 4,
+    Goalkeeper: 'Goalkeeper',
+    Defender: 'Defender',
+    Midfielder: 'Midfielder',
+    Winger: 'Winger',
+    Striker: 'Striker',
 } as const;
 export type Position = (typeof Position)[keyof typeof Position];
 
+// ملاحظة: الـ SkillLevel معرف في الباك إند صراحة بأرقام (Beginner = 1) 
+// لذلك نتركه أرقاماً كما هو حتى يوافق الـ دوت نت إينوم
 export const SkillLevel = {
     Beginner: 1,
     Elementary: 2,
@@ -29,14 +30,86 @@ export const SkillLevel = {
 export type SkillLevel = (typeof SkillLevel)[keyof typeof SkillLevel];
 
 export const NotificationType = {
-    Booking: 0,
-    Match: 1,
-    Tournament: 2,
-    Badge: 3,
-    Report: 4,
-    General: 5,
+    Booking: 'Booking',
+    Match: 'Match',
+    Tournament: 'Tournament',
+    Badge: 'Badge',
+    Report: 'Report',
+    General: 'General',
 } as const;
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
+
+export const ApprovalStatus = {
+    Pending: 'Pending',
+    Approved: 'Approved',
+    Rejected: 'Rejected',
+} as const;
+export type ApprovalStatus = (typeof ApprovalStatus)[keyof typeof ApprovalStatus];
+
+export const BookingStatus = {
+    Pending: 'Pending',
+    PendingPayment: 'PendingPayment',
+    PaymentSubmitted: 'PaymentSubmitted',
+    AwaitingAdminApproval: 'AwaitingAdminApproval',
+    Confirmed: 'Confirmed',
+    Cancelled: 'Cancelled',
+    Rejected: 'Rejected',
+    Expired: 'Expired',
+} as const;
+export type BookingStatus = (typeof BookingStatus)[keyof typeof BookingStatus];
+
+export const FieldSurface = {
+    NaturalGrass: 'NaturalGrass',
+    ArtificialTurf: 'ArtificialTurf',
+    HybridTurf: 'HybridTurf',
+} as const;
+export type FieldSurface = (typeof FieldSurface)[keyof typeof FieldSurface];
+
+export const FieldType = {
+    FiveASide: 'FiveASide',
+    SevenASide: 'SevenASide',
+    ElevenASide: 'ElevenASide',
+} as const;
+export type FieldType = (typeof FieldType)[keyof typeof FieldType];
+
+export const MatchStatus = {
+    Scheduled: 'Scheduled',
+    Live: 'Live',
+    Completed: 'Completed',
+    Cancelled: 'Cancelled',
+} as const;
+export type MatchStatus = (typeof MatchStatus)[keyof typeof MatchStatus];
+
+export const PaymentMethod = {
+    VodafoneCash: 'VodafoneCash',
+    InstaPay: 'InstaPay',
+} as const;
+export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
+
+export const ReportStatus = {
+    Pending: 'Pending',
+    UnderReview: 'UnderReview',
+    Resolved: 'Resolved',
+    Rejected: 'Rejected',
+} as const;
+export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
+
+export const SlotStatus = {
+    Available: 0,
+    Reserved: 1,
+    Booked: 2,
+    PaymentSent: 3,
+    UnderReview: 4,
+} as const;
+export type SlotStatus = (typeof SlotStatus)[keyof typeof SlotStatus];
+
+export const TournamentStatus = {
+    Upcoming: 'Upcoming',
+    Ongoing: 'Ongoing',
+    Finished: 'Finished',
+    Cancelled: 'Cancelled',
+} as const;
+export type TournamentStatus = (typeof TournamentStatus)[keyof typeof TournamentStatus];
 
 // ─── Display helpers ──────────────────────────────────────────────────────────
 

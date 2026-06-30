@@ -36,6 +36,14 @@ import { NotificationSettingsPage } from './modules/player/pages/NotificationSet
 import { SecuritySettingsPage } from './modules/player/pages/SecuritySettingsPage'
 import { NotificationList } from './modules/player/components/NotificationList'
 
+// ─── Admin Module Pages ──────────────────────────────────────────────────────
+import { AdminDashboard } from './modules/admin/pages/AdminDashboard'
+import AdminLayout from './modules/admin/components/AdminLayout'
+import AdminFieldsPage from './modules/admin/fields/pages/AdminFieldsPage'
+import AdminUsersPage from './modules/admin/users/pages/AdminUsersPage'
+import AdminTournamentsPage from './modules/admin/tournaments/pages/AdminTournamentsPage'
+import AdminUserDetailsPage from './modules/admin/users/pages/AdminUserDetailsPage'
+
 function App() {
   return (
     <LanguageProvider defaultLang="ar">
@@ -61,15 +69,38 @@ function App() {
             <BookingProvider>
               <Routes>
                 <Route path="date/:id" element={<DateSelectionPage />} />
-                <Route path="slots/:id" element={<TimeSlotsPage />} />
-                <Route path="payment" element={<PaymentMethodsPage />} />
-                <Route path="receipt" element={<ReceiptUploadPage />} />
-                <Route path="success" element={<BookingSuccessPage />} />
+                <Route path="slots/:id" element={<TimeSlotsPage onNext={function (): void {
+                  throw new Error('Function not implemented.')
+                }} onBack={function (): void {
+                  throw new Error('Function not implemented.')
+                }} fieldId={0} />} />
+                <Route path="payment" element={<PaymentMethodsPage onNext={function (): void {
+                  throw new Error('Function not implemented.')
+                }} onBack={function (): void {
+                  throw new Error('Function not implemented.')
+                }} />} />
+                <Route path="receipt" element={<ReceiptUploadPage onNext={function (): void {
+                  throw new Error('Function not implemented.')
+                }} onBack={function (): void {
+                  throw new Error('Function not implemented.')
+                }} />} />
+                <Route path="success" element={<BookingSuccessPage onClose={function (): void {
+                  throw new Error('Function not implemented.')
+                }} />} />
               </Routes>
             </BookingProvider>
           } />
 
-          {/* My Bookings is not strictly part of the wizard flow so it stays outside */}
+          {/* 🛡️ Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="fields" element={<AdminFieldsPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="users/:userId" element={<AdminUserDetailsPage />} />
+            <Route path="tournaments" element={<AdminTournamentsPage />} />
+          </Route>
+
+          {/* My Bookings stays outside wizard flow */}
           <Route path="/my-bookings" element={<MyBookingsPage />} />
 
           {/* 👤 Player Profile & Settings Routes */}

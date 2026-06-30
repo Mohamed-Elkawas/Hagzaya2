@@ -13,12 +13,17 @@ import type {
 export async function loginRequest(
   identifier: string,
   password: string,
-  loginMethod: 'email' | 'phone'
+  loginMethod: 'email' | 'phone',
+  role?: string
 ): Promise<AuthResponse> {
 
   // بناء الـ Payload بالـ keys اللي الباك إند بيفهمها في الـ Swagger
   const payload: Record<string, any> = {
     password: password,
+  }
+
+  if (role) {
+    payload.role = role;
   }
 
   if (loginMethod === 'email') {

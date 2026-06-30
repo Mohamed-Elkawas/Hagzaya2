@@ -99,19 +99,20 @@ export function PlayerProfilePage() {
     if (!profile) return null;
 
     // ── Derived display values ────────────────────────────────────────────────
-    const displayName = profile.displayName || `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim() || '—';
-    const positionLabel =
-        profile.position != null
-            ? POSITION_LABELS[profile.position as Position] ?? '—'
-            : null;
+    const displayName = `${profile.firstName ?? ''} ${profile.lastName ?? ''}`.trim() || profile.displayName || '—';
+    
+    // Position now comes directly as text (e.g. "مهاجم") from backend
+    const positionLabel = profile.position || '—';
+    
     const skillLabel =
         profile.skillLevel != null
             ? SKILL_LEVEL_LABELS[profile.skillLevel as SkillLevel] ?? '—'
             : null;
-    const genderLabel =
-        profile.gender != null
-            ? GENDER_LABELS[profile.gender as Gender] ?? '—'
-            : null;
+            
+    const genderLabel = profile.gender || '—';
+    
+    // Address fix: Ignore default swagger "string"
+    const displayAddress = (!profile.address || profile.address === 'string') ? '—' : profile.address;
 
     // Points wallet derived
     const totalPoints = points?.points ?? profile.points ?? 0;
@@ -379,7 +380,7 @@ export function PlayerProfilePage() {
                                             <InfoRow
                                                 icon="cake"
                                                 label="العمر"
-                                                value={profile.age ? `${profile.age} سنة` : null}
+                                                value={profile.age === 0 ? '—' : `${profile.age} سنة`}
                                             />
                                         </div>
                                         <div>
@@ -389,7 +390,7 @@ export function PlayerProfilePage() {
                                             <InfoRow
                                                 icon="sports_soccer"
                                                 label="مركز اللعب"
-                                                value={positionLabel ?? profile.position}
+                                                value={positionLabel}
                                             />
                                             <InfoRow
                                                 icon="groups"
@@ -399,7 +400,7 @@ export function PlayerProfilePage() {
                                             <InfoRow
                                                 icon="location_city"
                                                 label="العنوان"
-                                                value={profile.address ?? profile.city}
+                                                value={displayAddress}
                                             />
                                             {profile.bio && (
                                                 <div className="py-3 border-b border-[#f0f2f0] last:border-0">
