@@ -24,7 +24,7 @@ export function ProfileForm({ profile, onSave, isSaving }: ProfileFormProps) {
         bio: profile.bio || '',
         dateOfBirth: profile.dateOfBirth?.split('T')[0] || '', // YYYY-MM-DD
         gender: profile.gender ?? undefined,
-        position: profile.position ?? undefined,
+        position: profile.position as Position,
         skillLevel: profile.skillLevel ?? undefined,
         city: profile.city || '',
         country: profile.country || '',
@@ -32,10 +32,10 @@ export function ProfileForm({ profile, onSave, isSaving }: ProfileFormProps) {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        
+
         setFormData((prev) => {
             const updated = { ...prev };
-            
+
             if (name === 'skillLevel') {
                 // SkillLevel is a numeric enum on the backend (Beginner = 1, ...)
                 (updated as any)[name] = value ? Number(value) : undefined;
@@ -48,7 +48,7 @@ export function ProfileForm({ profile, onSave, isSaving }: ProfileFormProps) {
             } else {
                 (updated as any)[name] = value;
             }
-            
+
             return updated;
         });
     };
@@ -106,7 +106,7 @@ export function ProfileForm({ profile, onSave, isSaving }: ProfileFormProps) {
                         className="w-full text-xs font-semibold px-4 h-12 border border-[#e1e3e1] rounded-xl focus:outline-none focus:border-[#006b20] text-right"
                     />
                 </div>
-                
+
                 <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[#3e4a3c]">تاريخ الميلاد</label>
                     <input
@@ -179,7 +179,7 @@ export function ProfileForm({ profile, onSave, isSaving }: ProfileFormProps) {
                         className="w-full text-xs font-semibold px-4 h-12 border border-[#e1e3e1] rounded-xl focus:outline-none focus:border-[#006b20]"
                     />
                 </div>
-                
+
                 <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[#3e4a3c]">الدولة</label>
                     <input
