@@ -1,184 +1,152 @@
-import type { Field, FieldFilterParams } from '../types/fields.types';
+// src/modules/fields/api/fields.api.ts
+import axios from 'axios';
+import type { Field, FieldFilterParams, CreateFieldPayload } from '../types/fields.types';
 
-type ApiRequest = Record<string, unknown>;
+// ─── Upload Response Schema (matches /api/upload/* endpoints) ─────────────────
+export interface UploadResponse {
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSizeInBytes: number;
+}
 
-const BACKEND_URL = 'https://upwind-schnapps-uncoated.ngrok-free.dev';
+// ─── Axios Instance ───────────────────────────────────────────────────────────
+// Reads base URL from .env: VITE_PUBLIC_API_URL=https://hagzaya.runasp.net
+const API = axios.create({
+    baseURL: `${import.meta.env.VITE_PUBLIC_API_URL}/api`,
+});
 
-const handleStreamResponse = async <T>(response: Response): Promise<T> => {
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const blob = await response.blob();
-    const text = await blob.text();
-    return JSON.parse(text) as T;
-};
+// Request interceptor: auto-injects token + ngrok bypass header on every request
+API.interceptors.request.use((config) => {
+    const token = localStorage.getItem('hagzaya_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Prevents the Ngrok free-tier HTML warning page from intercepting the request
+    // and breaking the CORS preflight response.
+    config.headers['ngrok-skip-browser-warning'] = 'true';
+    return config;
+});
 
+// Response interceptor: extract the structured error message from the body
+API.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const serverMsg =
+            error.response?.data?.message ||
+            error.response?.data?.title ||
+            (typeof error.response?.data === 'string' ? error.response.data : null) ||
+            error.message ||
+            'Unknown server error';
+        return Promise.reject(new Error(serverMsg));
+    }
+);
+
+// ─── API Object ───────────────────────────────────────────────────────────────
 export const fieldsApi = {
-    getAllApprovedFields: async (search?: string, limit?: number): Promise<Field[]> => {
-        const params = new URLSearchParams();
-        if (search) params.append('search', search);
-        if (limit) params.append('limit', limit.toString());
-        const queryString = params.toString() ? `?${params.toString()}` : '';
 
-        const response = await fetch(`${BACKEND_URL}/api/fields${queryString}`, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            }
-        });
-        return handleStreamResponse<Field[]>(response);
+    // ── Read ──────────────────────────────────────────────────────────────
+
+    getAllApprovedFields: async (search?: string, limit?: number): Promise<Field[]> => {
+        const params: Record<string, string | number> = {};
+        if (search) params.search = search;
+        if (limit) params.limit = limit;
+        const response = await API.get<Field[]>('/fields', { params });
+        return response.data;
     },
 
-    getPopularFields: async (limit: number = 3): Promise<Field[]> => {
-        const response = await fetch(`${BACKEND_URL}/api/fields/popular?limit=${limit}`, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            }
-        });
-        return handleStreamResponse<Field[]>(response);
+    getPopularFields: async (limit = 3): Promise<Field[]> => {
+        const response = await API.get<Field[]>('/fields/popular', { params: { limit } });
+        return response.data;
     },
 
     searchFields: async (query: string): Promise<Field[]> => {
-        const response = await fetch(`${BACKEND_URL}/api/fields/search?query=${encodeURIComponent(query)}`, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            }
-        });
-        return handleStreamResponse<Field[]>(response);
+        const response = await API.get<Field[]>('/fields/search', { params: { query } });
+        return response.data;
     },
 
     getFieldById: async (id: number): Promise<Field> => {
-        const response = await fetch(`${BACKEND_URL}/api/fields/${id}`, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            }
-        });
-        return handleStreamResponse<Field>(response);
+        const response = await API.get<Field>(`/fields/${id}`);
+        return response.data;
     },
 
-    /**
-     * ✅ تم تصحيح الـ Return Type هنا ليعيد مصفوفة مباشرة Field[] ليطابق الـ .NET بالملي
-     */
-    /**
-         * 5. الفلترة المتقدمة والـ Pagination للملاعب (نسخة فلترة صارمة ومضمونة)
-         * GET /api/fields/filter
-         */
     getFilteredFields: async (filters: FieldFilterParams): Promise<Field[]> => {
-        const params = new URLSearchParams();
-
+        // Strip out undefined/null/empty-string params before sending
+        const cleaned: Record<string, string | number> = {};
         Object.entries(filters).forEach(([key, value]) => {
-            // تنظيف صارم: لو القيمة موجودة ومش نص فاضي بعد مسح المسافات (trim)
-            if (value !== undefined && value !== null) {
-                const stringValue = value.toString().trim();
-                if (stringValue !== '') {
-                    params.append(key, stringValue);
-                }
+            if (value !== undefined && value !== null && String(value).trim() !== '') {
+                cleaned[key] = value;
             }
         });
-
-        const queryString = params.toString() ? `?${params.toString()}` : '';
-
-        const response = await fetch(`${BACKEND_URL}/api/fields/filter${queryString}`, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            }
-        });
-        return handleStreamResponse<Field[]>(response);
-    },
-    createField: async (request: ApiRequest): Promise<Field> => {
-        const response = await fetch(`${BACKEND_URL}/api/fields`, {
-            method: 'POST',
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            },
-            body: JSON.stringify(request)
-        });
-        return handleStreamResponse<Field>(response);
-    },
-
-    updateField: async (id: number, request: ApiRequest): Promise<Field> => {
-        const response = await fetch(`${BACKEND_URL}/api/fields/${id}`, {
-            method: 'PUT',
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            },
-            body: JSON.stringify(request)
-        });
-        return handleStreamResponse<Field>(response);
-    },
-
-    deleteField: async (id: number): Promise<void> => {
-        const response = await fetch(`${BACKEND_URL}/api/fields/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            }
-        });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await API.get<Field[]>('/fields/filter', { params: cleaned });
+        return response.data;
     },
 
     getFieldsByOwner: async (ownerId: number): Promise<Field[]> => {
-        const response = await fetch(`${BACKEND_URL}/api/fields/owner/${ownerId}`, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            }
-        });
-        return handleStreamResponse<Field[]>(response);
+        const response = await API.get<Field[]>(`/fields/owner/${ownerId}`);
+        return response.data;
     },
 
     getPendingFields: async (): Promise<Field[]> => {
-        const response = await fetch(`${BACKEND_URL}/api/fields/pending`, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            }
-        });
-        return handleStreamResponse<Field[]>(response);
+        const response = await API.get<Field[]>('/fields/pending');
+        return response.data;
     },
 
-    approveField: async (request: ApiRequest): Promise<void> => {
-        const response = await fetch(`${BACKEND_URL}/api/fields/approve`, {
-            method: 'POST',
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            },
-            body: JSON.stringify(request)
-        });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    },
+    // ── Write ─────────────────────────────────────────────────────────────
 
-    uploadFieldPhoto: async (file: File): Promise<{ url: string }> => {
+    /**
+     * STEP 1 of upload pipeline.
+     * POST /api/upload/owner/license  (multipart/form-data, key: 'file')
+     *
+     * ⚠️  Do NOT set Content-Type manually — Axios will set it to
+     *    'multipart/form-data; boundary=...' automatically when a FormData
+     *    object is passed. Overriding it breaks the boundary delimiter.
+     *
+     * @returns { fileName, fileUrl, fileType, fileSizeInBytes }
+     */
+    uploadLicense: async (file: File): Promise<UploadResponse> => {
         const formData = new FormData();
         formData.append('file', file);
+        const response = await API.post<UploadResponse>('/upload/owner/license', formData);
+        return response.data;
+    },
 
-        const response = await fetch(`${BACKEND_URL}/api/upload/field/photos`, {
-            method: 'POST',
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Authorization': `Bearer ${localStorage.getItem('hagzaya_token') || ''}`
-            },
-            body: formData
-        });
-        return handleStreamResponse<{ url: string }>(response);
-    }
+    /**
+     * STEP 1b (optional parallel) — Upload a field photo.
+     * POST /api/upload/field/photos  (multipart/form-data, key: 'file')
+     *
+     * @returns { fileName, fileUrl, fileType, fileSizeInBytes }
+     */
+    uploadFieldPhoto: async (file: File): Promise<UploadResponse> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await API.post<UploadResponse>('/upload/field/photos', formData);
+        return response.data;
+    },
+
+    /**
+     * STEP 2 (final) — Create the field record.
+     * POST /api/fields  (application/json)
+     *
+     * theLicense and photos MUST be absolute URL strings
+     * returned from the upload endpoints above.
+     */
+    createField: async (payload: CreateFieldPayload): Promise<Field> => {
+        console.log('[fieldsApi.createField] Final payload:', JSON.stringify(payload, null, 2));
+        const response = await API.post<Field>('/fields', payload);
+        return response.data;
+    },
+
+    updateField: async (id: number, payload: Partial<CreateFieldPayload>): Promise<Field> => {
+        const response = await API.put<Field>(`/fields/${id}`, payload);
+        return response.data;
+    },
+
+    deleteField: async (id: number): Promise<void> => {
+        await API.delete(`/fields/${id}`);
+    },
+
+    approveField: async (payload: Record<string, unknown>): Promise<void> => {
+        await API.post('/fields/approve', payload);
+    },
 };

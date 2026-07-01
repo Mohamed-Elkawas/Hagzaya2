@@ -1,9 +1,11 @@
 // src/modules/fields/types/fields.types.ts
 
+// ⚠️ IMPORTANT: These values match the strict C# Enum names expected by the backend on POST.
+// The backend transforms them to display strings (e.g. '5-a-side') only in GET responses.
 export const FieldType = {
-    FiveASide: '5-a-side',
-    SevenASide: '7-a-side',
-    ElevenASide: '11-a-side'
+    FiveASide: 'FiveASide',
+    SevenASide: 'SevenASide',
+    ElevenASide: 'ElevenASide'
 } as const;
 export type FieldType = typeof FieldType[keyof typeof FieldType];
 
@@ -56,4 +58,26 @@ export interface FieldFilterParams {
     Sort?: string;
     Page?: number;
     PageSize?: number;
+}
+
+// Strict creation payload — matches POST /api/fields exactly.
+// Numbers MUST be cast via Number() before submission.
+export interface CreateFieldPayload {
+    name: string;
+    city: string;
+    village: string;
+    address: string;
+    governorate: string;
+    theLicense: string;
+    photos: string;              // Stringified JSON array or empty string
+    type: FieldType;             // Sends 'FiveASide' | 'SevenASide' | 'ElevenASide'
+    priceAm: number;
+    pricePm: number;
+    latitude: number;
+    longitude: number;
+    capacity: number;
+    surface: 'NaturalGrass' | 'ArtificialTurf' | 'HybridTurf';
+    openingTime: string;         // Format: "HH:mm"
+    closingTime: string;         // Format: "HH:mm"
+    amenities: string[];
 }
