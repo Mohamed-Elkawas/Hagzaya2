@@ -1,16 +1,19 @@
 // src/modules/owner/fields/types/fields.types.ts
+// ⚠️ NOTE: No `enum` keyword — uses `as const` to comply with erasableSyntaxOnly.
 
-export enum FieldType {
-    FiveASide = "FiveASide",
-    SevenASide = "SevenASide",
-    ElevenASide = "ElevenASide"
-}
+export const FieldType = {
+    FiveASide: 'FiveASide',
+    SevenASide: 'SevenASide',
+    ElevenASide: 'ElevenASide',
+} as const;
+export type FieldType = (typeof FieldType)[keyof typeof FieldType];
 
-export enum FieldSurface {
-    NaturalGrass = "NaturalGrass",
-    ArtificialTurf = "ArtificialTurf",
-    HybridTurf = "HybridTurf"
-}
+export const FieldSurface = {
+    NaturalGrass: 'NaturalGrass',
+    ArtificialTurf: 'ArtificialTurf',
+    HybridTurf: 'HybridTurf',
+} as const;
+export type FieldSurface = (typeof FieldSurface)[keyof typeof FieldSurface];
 
 export interface CreateFieldRequest {
     name: string;
@@ -39,3 +42,8 @@ export interface FieldResponse {
     approvalStatus: string;
     [key: string]: any; // Catch-all for extra fields in the 201 response
 }
+
+// Re-export CreateFieldPayload from the shared fields module so any file
+// in the owner domain can import it from here without path gymnastics.
+export type { CreateFieldPayload } from '../../../fields/types/fields.types';
+

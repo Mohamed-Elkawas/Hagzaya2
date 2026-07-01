@@ -36,9 +36,15 @@ export function ProfileForm({ profile, onSave, isSaving }: ProfileFormProps) {
         setFormData((prev) => {
             const updated = { ...prev };
             
-            // Handle numeric enums correctly
-            if (name === 'gender' || name === 'position' || name === 'skillLevel') {
+            if (name === 'skillLevel') {
+                // SkillLevel is a numeric enum on the backend (Beginner = 1, ...)
                 (updated as any)[name] = value ? Number(value) : undefined;
+            } else if (name === 'gender') {
+                // Gender is a string union: 'Male' | 'Female'
+                (updated as any)[name] = (value as typeof Gender[keyof typeof Gender]) || undefined;
+            } else if (name === 'position') {
+                // Position is a string union: 'Goalkeeper' | 'Defender' | ...
+                (updated as any)[name] = (value as typeof Position[keyof typeof Position]) || undefined;
             } else {
                 (updated as any)[name] = value;
             }
@@ -46,6 +52,7 @@ export function ProfileForm({ profile, onSave, isSaving }: ProfileFormProps) {
             return updated;
         });
     };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

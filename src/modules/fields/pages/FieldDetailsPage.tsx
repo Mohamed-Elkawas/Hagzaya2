@@ -166,7 +166,6 @@ export function FieldDetailsPage() {
                     isOpen={isBookingModalOpen}
                     onClose={() => setIsBookingModalOpen(false)}
                     fieldId={currentField.id}
-                    fieldName={currentField.name}
                     fieldPrice={slotPrice}
                 />
             )}

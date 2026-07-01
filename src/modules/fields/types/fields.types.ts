@@ -81,4 +81,5 @@ export interface CreateFieldPayload {
     openingTime: string;         // Format: "HH:mm"
     closingTime: string;         // Format: "HH:mm"
     amenities: string[];
+    isAvailable?: boolean;       // Optional — used in PATCH/update flows only
 }

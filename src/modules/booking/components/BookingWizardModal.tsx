@@ -11,6 +11,8 @@ interface BookingWizardModalProps {
     onClose: () => void;
     /** The field ID to book — passed straight through to the step pages */
     fieldId: number;
+    /** Price per slot in the local currency (e.g. EGP) */
+    fieldPrice: number;
 }
 
 // ── WizardShell ────────────────────────────────────────────────────────────────
@@ -23,9 +25,10 @@ interface WizardShellProps {
     onBack: () => void;
     onClose: () => void;
     fieldId: number;
+    fieldPrice: number;
 }
 
-function WizardShell({ step, onNext, onBack, onClose, fieldId }: WizardShellProps) {
+function WizardShell({ step, onNext, onBack, onClose, fieldId, fieldPrice }: WizardShellProps) {
     const { clearState } = useBookingFlow();
 
     // Clears context state so a fresh modal open always starts blank
@@ -82,7 +85,7 @@ function WizardShell({ step, onNext, onBack, onClose, fieldId }: WizardShellProp
 }
 
 // ── BookingWizardModal ─────────────────────────────────────────────────────────
-export function BookingWizardModal({ isOpen, onClose, fieldId }: BookingWizardModalProps) {
+export function BookingWizardModal({ isOpen, onClose, fieldId, fieldPrice }: BookingWizardModalProps) {
     const [step, setStep] = useState(1);
 
     // Always reset to step 1 whenever the modal is opened so it never starts
@@ -104,6 +107,7 @@ export function BookingWizardModal({ isOpen, onClose, fieldId }: BookingWizardMo
                 onBack={prevStep}
                 onClose={onClose}
                 fieldId={fieldId}
+                fieldPrice={fieldPrice}
             />
         </BookingProvider>
     );
