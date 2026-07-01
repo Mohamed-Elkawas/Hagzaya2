@@ -12,9 +12,11 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  MapPin,
 } from 'lucide-react';
 import type { Tournament } from '../types/tournament';
 import { TournamentStatus } from '../types/tournament';
+import { useTournamentState } from '../hooks/useTournamentState';
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -68,6 +70,7 @@ function formatDate(iso: string): string {
 
 export function TournamentCard({ tournament }: TournamentCardProps) {
   const navigate = useNavigate();
+  const { openRegisterModal } = useTournamentState();
   const config = statusConfig[tournament.status] ?? statusConfig[TournamentStatus.Upcoming];
   const progressPct = Math.min(
     100,
@@ -91,7 +94,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
 
       {/* Cover / Gradient Header */}
       <div
-        className="relative h-28 bg-gradient-to-br from-[#003d12] via-[#006b20] to-[#00a336] flex items-end p-4 overflow-hidden"
+        className="relative h-28 bg-linear-to-br from-[#003d12] via-primary to-[#00a336] flex items-end p-4 overflow-hidden"
         style={
           tournament.coverImage
             ? {
@@ -103,7 +106,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
         }
       >
         {tournament.coverImage && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/70 to-transparent" />
         )}
         <div className="relative z-10">
           <h3 className="text-white font-extrabold text-base leading-tight line-clamp-1">
@@ -124,8 +127,8 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
             {config.labelAr}
           </span>
           <div className="text-end">
-            <p className="text-[10px] text-[#3e4a3c]/50 font-medium">الجائزة</p>
-            <p className="text-sm font-black text-[#006b20] flex items-center gap-0.5">
+            <p className="text-[10px] text-on-surface-variant/50 font-medium">الجائزة</p>
+            <p className="text-sm font-black text-primary flex items-center gap-0.5">
               <Trophy className="w-3.5 h-3.5" />
               {tournament.prize}
             </p>
@@ -135,26 +138,36 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
         {/* Stats Row */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-[#f6f8f7] rounded-xl p-2.5 text-center">
-            <Users className="w-4 h-4 text-[#006b20] mx-auto mb-0.5" />
+            <Users className="w-4 h-4 text-primary mx-auto mb-0.5" />
             <p className="text-xs font-bold text-[#191c1c]">
-              {tournament.registeredTeamsCount}/{tournament.numberOfTeams}
+              {tournament.registeredTeamsCount ?? tournament.teamsJoined ?? 0}/{tournament.numberOfTeams}
             </p>
-            <p className="text-[10px] text-[#3e4a3c]/60">فرق مسجلة</p>
+            <p className="text-[10px] text-on-surface-variant/60">فرق مسجلة</p>
           </div>
           <div className="bg-[#f6f8f7] rounded-xl p-2.5 text-center">
-            <CalendarDays className="w-4 h-4 text-[#006b20] mx-auto mb-0.5" />
+            <CalendarDays className="w-4 h-4 text-primary mx-auto mb-0.5" />
             <p className="text-xs font-bold text-[#191c1c]">
               {formatDate(tournament.startDate)}
             </p>
-            <p className="text-[10px] text-[#3e4a3c]/60">تاريخ البداية</p>
+            <p className="text-[10px] text-on-surface-variant/60">تاريخ البداية</p>
           </div>
         </div>
 
+        {/* Field Location (when available) */}
+        {(tournament.fieldName || tournament.fieldCity) && (
+          <div className="flex items-center gap-1.5 text-[11px] text-on-surface-variant/70">
+            <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="truncate">
+              {[tournament.fieldName, tournament.fieldCity].filter(Boolean).join(' — ')}
+            </span>
+          </div>
+        )}
+
         {/* Registration Progress Bar */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-[#3e4a3c]">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-on-surface-variant">
             <span>التسجيل</span>
-            <span className={isFull ? 'text-red-500' : 'text-[#006b20]'}>
+            <span className={isFull ? 'text-red-500' : 'text-primary'}>
               {isFull ? 'مكتمل' : `${progressPct}%`}
             </span>
           </div>
@@ -165,18 +178,39 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
                   ? 'bg-red-400'
                   : progressPct > 70
                   ? 'bg-amber-400'
-                  : 'bg-[#006b20]'
+                  : 'bg-primary'
               }`}
               style={{ width: `${progressPct}%` }}
             />
           </div>
         </div>
 
-        {/* CTA */}
-        <button className="mt-auto w-full bg-[#006b20] hover:bg-[#005318] active:scale-[0.98] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm group-hover:shadow-md">
-          عرض التفاصيل
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        {/* CTAs */}
+        <div className="mt-auto flex flex-col gap-2">
+          {/* Register CTA — only for open, non-full Upcoming tournaments */}
+          {tournament.status === TournamentStatus.Upcoming && !isFull && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openRegisterModal();
+                navigate(`/tournaments/${tournament.id}`);
+              }}
+              className="w-full bg-linear-to-r from-primary to-[#00a336] hover:from-[#005318] hover:to-[#007a28] active:scale-[0.98] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md group-hover:shadow-lg"
+            >
+              سجل فريقك الآن ⚽
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/tournaments/${tournament.id}`);
+            }}
+            className="w-full border border-primary/30 text-primary hover:bg-primary/5 active:scale-[0.98] py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+          >
+            عرض التفاصيل
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -27,6 +27,13 @@ export const PaymentMethod = {
 } as const;
 export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
 
+export const PaymentRequestStatus = {
+  Pending: 'Pending',
+  Approved: 'Approved',
+  Rejected: 'Rejected',
+} as const;
+export type PaymentRequestStatus = typeof PaymentRequestStatus[keyof typeof PaymentRequestStatus];
+
 export const TournamentType = {
   FiveASide: 'FiveASide',
   SevenASide: 'SevenASide',
@@ -46,6 +53,7 @@ export type UserRole = typeof UserRole[keyof typeof UserRole];
 export interface PlayerProfile {
   id: string;
   username: string;
+  fullName?: string;
   avatarUrl?: string;
   position?: string;
 }
@@ -105,8 +113,13 @@ export interface Tournament {
   startDate: string;
   endDate: string;
   fieldId: string;
+  /** Optional field name/city returned by expanded API responses */
+  fieldName?: string;
+  fieldCity?: string;
   status: TournamentStatus;
   registeredTeamsCount: number;
+  /** Alias used by some API responses */
+  teamsJoined?: number;
   ownerId: string;
   coverImage?: string;
   groups?: Group[];
@@ -120,6 +133,36 @@ export interface TournamentRewards {
   thirdPlace?: string;
   theBestPlayer?: string;
   theBestGoalkeeper?: string;
+}
+
+// ── Payment Request (Owner view) ──────────────────────────────────────────
+
+/** Represents a team's tournament registration payment that awaits owner approval */
+export interface PaymentRequest {
+  id: number;
+  tournamentId: string;
+  tournamentName?: string;
+  teamId?: string;
+  teamName: string;
+  captainId?: string;
+  captainName: string;
+  amountDue: number;
+  paymentMethod: PaymentMethod;
+  /** URL to uploaded receipt — only present when paymentMethod === 'VodafoneCash' */
+  paymentProofUrl?: string;
+  status: PaymentRequestStatus;
+  createdAt?: string;
+}
+
+/** Returned from GET /api/tournaments/{id}/payment-status */
+export interface PaymentStatus {
+  tournamentId: string;
+  teamName?: string;
+  status: PaymentRequestStatus | string;
+  paymentMethod?: PaymentMethod;
+  amountPaid?: number;
+  paidAt?: string;
+  message?: string;
 }
 
 // ── API Request Shapes ────────────────────────────────────────────────────
@@ -140,6 +183,7 @@ export interface JoinTournamentPayload {
   teamName: string;
   memberIds: string[];
   paymentMethod: PaymentMethod;
+  paymentProofUrl?: string;
 }
 
 export interface CreateTeamPayload {
@@ -160,6 +204,10 @@ export interface UpdateScorePayload {
   matchId: string;
   scoreA: number;
   scoreB: number;
+}
+
+export interface RejectPaymentPayload {
+  reason: string;
 }
 
 // ── API Response Shapes ───────────────────────────────────────────────────

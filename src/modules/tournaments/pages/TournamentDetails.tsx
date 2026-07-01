@@ -74,7 +74,7 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { icon: <Users className="w-5 h-5 text-[#006b20]" />, label: 'الفرق المسجلة', value: `${tournament.registeredTeamsCount}/${tournament.numberOfTeams}` },
+          { icon: <Users className="w-5 h-5 text-primary" />, label: 'الفرق المسجلة', value: `${tournament.registeredTeamsCount}/${tournament.numberOfTeams}` },
           { icon: <Trophy className="w-5 h-5 text-amber-500" />, label: 'الجائزة الكبرى', value: tournament.prize },
           { icon: <CalendarDays className="w-5 h-5 text-blue-500" />, label: 'تاريخ البداية', value: formatDate(tournament.startDate) },
           { icon: <CalendarDays className="w-5 h-5 text-purple-500" />, label: 'تاريخ النهاية', value: formatDate(tournament.endDate) },
@@ -84,7 +84,7 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
               {stat.icon}
             </div>
             <div>
-              <p className="text-[11px] text-[#3e4a3c]/60 font-medium">{stat.label}</p>
+              <p className="text-[11px] text-on-surface-variant/60 font-medium">{stat.label}</p>
               <p className="text-sm font-black text-[#191c1c] leading-tight">{stat.value}</p>
             </div>
           </div>
@@ -94,9 +94,9 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
       {/* Description */}
       <div className="bg-white rounded-2xl border border-[#e1e3e1] p-5 shadow-sm">
         <h3 className="font-bold text-[#191c1c] mb-2 text-sm flex items-center gap-2">
-          <Shield className="w-4 h-4 text-[#006b20]" /> نبذة عن البطولة
+          <Shield className="w-4 h-4 text-primary" /> نبذة عن البطولة
         </h3>
-        <p className="text-sm text-[#3e4a3c] leading-relaxed">
+        <p className="text-sm text-on-surface-variant leading-relaxed">
           {tournament.description || 'لا توجد تفاصيل إضافية لهذه البطولة.'}
         </p>
       </div>
@@ -109,28 +109,28 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
             {config.label}
           </span>
         </div>
-        <div className="flex items-center justify-between text-xs font-semibold text-[#3e4a3c]">
+        <div className="flex items-center justify-between text-xs font-semibold text-on-surface-variant">
           <span>{tournament.registeredTeamsCount} فريق مسجل</span>
-          <span className={isFull ? 'text-red-500' : 'text-[#006b20]'}>
+          <span className={isFull ? 'text-red-500' : 'text-primary'}>
             {isFull ? 'مكتمل' : `${progress}%`}
           </span>
         </div>
         <div className="w-full bg-[#e8ede9] h-3 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-700 ${
-              isFull ? 'bg-red-400' : progress > 70 ? 'bg-amber-400' : 'bg-[#006b20]'
+              isFull ? 'bg-red-400' : progress > 70 ? 'bg-amber-400' : 'bg-primary'
             }`}
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className="text-[11px] text-[#3e4a3c]/60">
+        <p className="text-[11px] text-on-surface-variant/60">
           {tournament.numberOfTeams - tournament.registeredTeamsCount} مقعد متبقي
         </p>
       </div>
 
       {/* Rewards */}
       {tournament.rewards && (
-        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl border border-amber-200 p-5 shadow-sm">
+        <div className="bg-linear-to-br from-amber-50 to-yellow-50 rounded-2xl border border-amber-200 p-5 shadow-sm">
           <h3 className="font-bold text-[#191c1c] mb-4 text-sm flex items-center gap-2">
             <Award className="w-4 h-4 text-amber-500" /> جوائز البطولة
           </h3>
@@ -141,7 +141,7 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
               { place: '🥉 المركز الثالث', value: tournament.rewards.thirdPlace },
             ].filter(r => r.value).map((r) => (
               <div key={r.place} className="bg-white rounded-xl p-3 text-center border border-amber-200">
-                <p className="text-xs font-bold text-[#3e4a3c]">{r.place}</p>
+                <p className="text-xs font-bold text-on-surface-variant">{r.place}</p>
                 <p className="text-sm font-black text-amber-600 mt-1">{r.value}</p>
               </div>
             ))}
@@ -149,7 +149,7 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
           {tournament.rewards.theBestPlayer && (
             <div className="mt-3 flex items-center gap-2 bg-white rounded-xl p-3 border border-amber-200">
               <Award className="w-4 h-4 text-purple-500" />
-              <span className="text-xs font-bold text-[#3e4a3c]">أفضل لاعب:</span>
+              <span className="text-xs font-bold text-on-surface-variant">أفضل لاعب:</span>
               <span className="text-xs font-black text-purple-600">{tournament.rewards.theBestPlayer}</span>
             </div>
           )}
@@ -159,7 +159,7 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
       {/* Rules */}
       <div className="bg-white rounded-2xl border border-[#e1e3e1] p-5 shadow-sm">
         <h3 className="font-bold text-[#191c1c] mb-3 text-sm flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-[#006b20]" /> قواعد البطولة
+          <CheckCircle2 className="w-4 h-4 text-primary" /> قواعد البطولة
         </h3>
         <ul className="space-y-2">
           {[
@@ -168,8 +168,8 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
             'لا تعادل في الدور الإقصائي — وقت إضافي ثم ركلات الترجيح',
             'رسوم التسجيل: ' + tournament.price + ' جنيه لكل فريق',
           ].map((rule, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-[#3e4a3c]">
-              <span className="w-4 h-4 bg-[#e8f5e9] rounded-full flex items-center justify-center text-[#006b20] shrink-0 mt-0.5">
+            <li key={i} className="flex items-start gap-2 text-sm text-on-surface-variant">
+              <span className="w-4 h-4 bg-[#e8f5e9] rounded-full flex items-center justify-center text-primary shrink-0 mt-0.5">
                 <CheckCircle2 className="w-2.5 h-2.5" />
               </span>
               {rule}
@@ -188,10 +188,10 @@ function GroupsTab({ tournament }: { tournament: Tournament }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
         <div className="w-14 h-14 bg-[#f0f2f0] rounded-full flex items-center justify-center">
-          <Layers className="w-7 h-7 text-[#3e4a3c]/40" />
+          <Layers className="w-7 h-7 text-on-surface-variant/40" />
         </div>
         <p className="text-sm font-bold text-[#191c1c]">المجموعات</p>
-        <p className="text-xs text-[#3e4a3c]/60 max-w-xs">
+        <p className="text-xs text-on-surface-variant/60 max-w-xs">
           سيتم تحديد المجموعات بعد اكتمال التسجيل وإجراء القرعة.
         </p>
       </div>
@@ -234,10 +234,10 @@ function MatchesTab({
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
         <div className="w-14 h-14 bg-[#f0f2f0] rounded-full flex items-center justify-center">
-          <Clock className="w-7 h-7 text-[#3e4a3c]/40" />
+          <Clock className="w-7 h-7 text-on-surface-variant/40" />
         </div>
         <p className="text-sm font-bold text-[#191c1c]">لا توجد مباريات مجدولة</p>
-        <p className="text-xs text-[#3e4a3c]/60">ستظهر المباريات بعد إجراء القرعة</p>
+        <p className="text-xs text-on-surface-variant/60">ستظهر المباريات بعد إجراء القرعة</p>
       </div>
     );
   }
@@ -252,8 +252,8 @@ function MatchesTab({
             onClick={() => setFilterStage(stage)}
             className={`whitespace-nowrap text-xs font-bold px-3 py-1.5 rounded-xl transition-all shrink-0 ${
               filterStage === stage
-                ? 'bg-[#006b20] text-white shadow'
-                : 'bg-white border border-[#e1e3e1] text-[#3e4a3c] hover:bg-[#f0f2f0]'
+                ? 'bg-primary text-white shadow'
+                : 'bg-white border border-[#e1e3e1] text-on-surface-variant hover:bg-[#f0f2f0]'
             }`}
           >
             {stage === 'All' ? 'الكل' : STAGE_LABELS[stage] ?? stage}
@@ -310,7 +310,7 @@ function AdminPanelTab({
           <Shield className="w-7 h-7 text-red-400" />
         </div>
         <p className="text-sm font-bold text-[#191c1c]">غير مصرح</p>
-        <p className="text-xs text-[#3e4a3c]/60">هذه اللوحة مخصصة للمالك والمسؤول فقط</p>
+        <p className="text-xs text-on-surface-variant/60">هذه اللوحة مخصصة للمالك والمسؤول فقط</p>
       </div>
     );
   }
@@ -331,7 +331,7 @@ function AdminPanelTab({
   return (
     <div className="space-y-6">
       {/* Panel Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl p-5 text-white">
+      <div className="bg-linear-to-r from-slate-800 to-slate-700 rounded-2xl p-5 text-white">
         <div className="flex items-center gap-2 mb-1">
           <Settings className="w-4 h-4" />
           <h3 className="font-bold text-sm">لوحة تحكم {currentRole === UserRole.Admin ? 'المسؤول' : 'المالك'}</h3>
@@ -376,7 +376,7 @@ function AdminPanelTab({
               { key: 'theBestGoalkeeper', label: '🧤 أفضل حارس مرمى' },
             ].map((field) => (
               <div key={field.key} className="space-y-1">
-                <label className="text-[11px] font-semibold text-[#3e4a3c]">
+                <label className="text-[11px] font-semibold text-on-surface-variant">
                   {field.label}
                 </label>
                 <input
@@ -386,7 +386,7 @@ function AdminPanelTab({
                   onChange={(e) =>
                     setRewardForm((prev) => ({ ...prev, [field.key]: e.target.value }))
                   }
-                  className="w-full px-3 h-10 rounded-xl border border-[#e1e3e1] text-sm text-[#191c1c] focus:outline-none focus:border-[#006b20] focus:ring-2 focus:ring-[#006b20]/20 transition-all"
+                  className="w-full px-3 h-10 rounded-xl border border-[#e1e3e1] text-sm text-[#191c1c] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                 />
               </div>
             ))}
@@ -399,7 +399,7 @@ function AdminPanelTab({
           <button
             onClick={handleSaveRewards}
             disabled={isSavingRewards}
-            className="w-full h-10 bg-[#006b20] hover:bg-[#005318] disabled:opacity-50 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+            className="w-full h-10 bg-primary hover:bg-[#005318] disabled:opacity-50 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
           >
             {isSavingRewards ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -415,7 +415,7 @@ function AdminPanelTab({
       {/* Registered Teams List */}
       <div className="bg-white rounded-2xl border border-[#e1e3e1] p-5 shadow-sm">
         <h3 className="font-bold text-[#191c1c] text-sm flex items-center gap-2 mb-3">
-          <Users className="w-4 h-4 text-[#006b20]" />
+          <Users className="w-4 h-4 text-primary" />
           الفرق المسجلة ({tournament.registeredTeamsCount})
         </h3>
         {tournament.groups && tournament.groups.length > 0 ? (
@@ -426,17 +426,17 @@ function AdminPanelTab({
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#f6f8f7] hover:bg-[#edf0ec] transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-[#e8f5e9] flex items-center justify-center shrink-0">
-                  <Shield className="w-4 h-4 text-[#006b20]" />
+                  <Shield className="w-4 h-4 text-primary" />
                 </div>
                 <p className="text-sm font-bold text-[#191c1c] flex-1">{team.name}</p>
-                <span className="text-[10px] font-bold text-[#006b20] bg-[#e8f5e9] px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-primary bg-[#e8f5e9] px-2 py-0.5 rounded-full">
                   مقبول
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-xs text-[#3e4a3c]/60 text-center py-4">
+          <p className="text-xs text-on-surface-variant/60 text-center py-4">
             لا توجد فرق مسجلة بعد
           </p>
         )}
@@ -498,8 +498,8 @@ export function TournamentDetails() {
     return (
       <div className="min-h-screen bg-[#f6f8f7] flex items-center justify-center" dir="rtl">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-[#006b20] animate-spin" />
-          <p className="text-sm font-bold text-[#3e4a3c]">جار تحميل تفاصيل البطولة...</p>
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-sm font-bold text-on-surface-variant">جار تحميل تفاصيل البطولة...</p>
         </div>
       </div>
     );
@@ -512,7 +512,7 @@ export function TournamentDetails() {
           <p className="text-base font-bold text-[#191c1c]">⚠️ البطولة غير موجودة</p>
           <button
             onClick={() => navigate('/tournaments')}
-            className="text-sm font-bold text-[#006b20] underline"
+            className="text-sm font-bold text-primary underline"
           >
             العودة للقائمة
           </button>
@@ -528,7 +528,7 @@ export function TournamentDetails() {
     <div className="min-h-screen bg-[#f6f8f7] pb-16" dir="rtl">
       {/* ── HERO ── */}
       <div
-        className="relative h-64 md:h-80 bg-gradient-to-br from-[#001a07] via-[#003d12] to-[#006b20] flex flex-col justify-end overflow-hidden"
+        className="relative h-64 md:h-80 bg-linear-to-br from-[#001a07] via-[#003d12] to-primary flex flex-col justify-end overflow-hidden"
         style={
           tournament.coverImage
             ? { backgroundImage: `url(${tournament.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
@@ -536,12 +536,12 @@ export function TournamentDetails() {
         }
       >
         {tournament.coverImage && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
         )}
 
         {/* Live Badge */}
         {isLive && (
-          <div className="absolute top-4 end-4 flex items-center gap-1.5 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg z-10">
+          <div className="absolute top-4 inset-e-4 flex items-center gap-1.5 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg z-10">
             <span className="w-2 h-2 bg-white rounded-full animate-ping" />
             جارية الآن
           </div>
@@ -584,7 +584,7 @@ export function TournamentDetails() {
             {canJoin && (
               <button
                 onClick={openRegisterModal}
-                className="shrink-0 bg-[#006b20] hover:bg-[#005318] text-white font-black text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center gap-2"
+                className="shrink-0 bg-primary hover:bg-[#005318] text-white font-black text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center gap-2"
               >
                 <Trophy className="w-4 h-4" />
                 انضم الآن
@@ -604,8 +604,8 @@ export function TournamentDetails() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-1.5 whitespace-nowrap text-xs font-bold px-3 py-2 rounded-xl transition-all shrink-0 ${
                 activeTab === tab.id
-                  ? 'bg-[#006b20] text-white shadow'
-                  : 'text-[#3e4a3c] hover:bg-[#f0f2f0]'
+                  ? 'bg-primary text-white shadow'
+                  : 'text-on-surface-variant hover:bg-[#f0f2f0]'
               }`}
             >
               {tab.icon}

@@ -13,13 +13,16 @@ import { ResetPasswordPage } from './modules/auth/pages/ResetPasswordPage'
 import { TournamentExplore } from './modules/tournaments/pages/TournamentExplore'
 import { TournamentDetails } from './modules/tournaments/pages/TournamentDetails'
 import { CreateTournament } from './modules/tournaments/pages/CreateTournament'
+import { OwnerTournamentsTab } from './modules/tournaments/pages/OwnerTournamentsTab'
+import { OwnerTournamentPaymentsPage } from './modules/tournaments/pages/OwnerTournamentPaymentsPage'
 
 // ─── Fields Module Pages ─────────────────────────────────────────────────────
 import { FieldsPage } from './modules/fields/pages/FieldsPage'
 import { FieldDetailsPage } from './modules/fields/pages/FieldDetailsPage'
 import { CreateFieldPage } from './modules/fields/pages/CreateFieldPage'
 import { OwnerFieldsPage } from './modules/fields/pages/OwnerFieldsPage'
-import { OwnerDashboardPage } from './modules/dashboard/pages/OwnerDashboardPage'
+import { OwnerDashboardPage } from './modules/owner/pages/OwnerDashboardPage'
+import { OwnerBookingsPage } from './modules/owner/pages/OwnerBookingsPage'
 
 // ─── Booking Module Pages (المسارات المفصلة الجديدة خطوة بخطوة) ──────────────
 import { DateSelectionPage } from './modules/booking/pages/Dateselectionpage'
@@ -117,8 +120,13 @@ function App() {
 
           {/* 💼 Owner Management Routes */}
           <Route path="/owner/dashboard" element={<OwnerDashboardPage />} />
+          <Route path="/owner/bookings" element={<OwnerBookingsPage />} />
           <Route path="/owner/fields" element={<OwnerFieldsPage />} />
           <Route path="/owner/fields/create" element={<CreateFieldPage />} />
+
+          {/* 🏆 Owner Tournament Management Routes */}
+          <Route path="/owner/tournaments" element={<OwnerTournamentsTab />} />
+          <Route path="/owner/tournaments/payments" element={<OwnerTournamentPaymentsPage />} />
 
           {/* 🏆 Tournament Module Routes */}
           <Route path="/tournaments" element={<TournamentExplore />} />

@@ -19,8 +19,11 @@ import {
   Info,
   Shield,
   MapPin,
+  ChevronDown,
 } from 'lucide-react';
 import { tournamentsApi } from '../api/api';
+import { fieldsApi } from '../../fields/api/fields.api';
+import type { Field } from '../../fields/types/fields.types';
 import type { CreateTournamentPayload } from '../types/tournament';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -56,6 +59,27 @@ const TOURNAMENT_TYPES = [
 ];
 
 const TEAM_COUNTS: (8 | 16 | 32)[] = [8, 16, 32];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Decode ownerId from a stored JWT without external libraries */
+function parseOwnerIdFromToken(): number | null {
+  try {
+    const token = localStorage.getItem('hagzaya_token');
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const raw =
+      payload.sub ||
+      payload.id ||
+      payload.userId ||
+      payload.ownerId ||
+      payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+    const parsed = Number(raw);
+    return isNaN(parsed) ? null : parsed;
+  } catch {
+    return null;
+  }
+}
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -95,7 +119,7 @@ function FormSection({
   return (
     <div className="bg-white rounded-2xl border border-[#e1e3e1] p-6 shadow-sm space-y-5">
       <div className="flex items-center gap-2 pb-3 border-b border-[#f0f2f0]">
-        <div className="w-8 h-8 rounded-xl bg-[#e8f5e9] flex items-center justify-center text-[#006b20]">
+        <div className="w-8 h-8 rounded-xl bg-[#e8f5e9] flex items-center justify-center text-primary">
           {icon}
         </div>
         <h3 className="font-bold text-sm text-[#191c1c]">{title}</h3>
@@ -120,13 +144,13 @@ function FormField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-semibold text-[#3e4a3c] flex items-center gap-1">
+      <label className="text-sm font-semibold text-on-surface-variant flex items-center gap-1">
         {label}
         {required && <span className="text-red-500 text-xs">*</span>}
       </label>
       {children}
       {hint && !error && (
-        <p className="text-[11px] text-[#3e4a3c]/60 flex items-center gap-1">
+        <p className="text-[11px] text-on-surface-variant/60 flex items-center gap-1">
           <Info className="w-3 h-3" /> {hint}
         </p>
       )}
@@ -161,6 +185,21 @@ export function CreateTournament() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
 
+  // ── Owner Fields Dropdown ────────────────────────────────────────────────
+  const [ownerFields, setOwnerFields] = useState<Field[]>([]);
+  const [isLoadingFields, setIsLoadingFields] = useState(false);
+
+  useEffect(() => {
+    const ownerId = parseOwnerIdFromToken();
+    if (!ownerId) return;
+    setIsLoadingFields(true);
+    fieldsApi
+      .getFieldsByOwner(ownerId)
+      .then((fields) => setOwnerFields(Array.isArray(fields) ? fields : []))
+      .catch(() => setOwnerFields([]))
+      .finally(() => setIsLoadingFields(false));
+  }, []);
+
   // Validate on change if field was touched
   useEffect(() => {
     if (touched.size > 0) {
@@ -178,15 +217,14 @@ export function CreateTournament() {
   };
 
   const inputClass = (field: keyof FormErrors) =>
-    `w-full px-3 h-11 rounded-xl border text-sm text-[#191c1c] font-medium placeholder-[#3e4a3c]/40 focus:outline-none transition-all ${
+    `w-full px-3 h-11 rounded-xl border text-sm text-[#191c1c] font-medium placeholder-on-surface-variant/40 focus:outline-none transition-all ${
       errors[field] && touched.has(field)
         ? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100'
-        : 'border-[#e1e3e1] focus:border-[#006b20] focus:ring-2 focus:ring-[#006b20]/20'
+        : 'border-[#e1e3e1] focus:border-primary focus:ring-2 focus:ring-primary/20'
     }`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Touch all fields to show errors
     const allFields = Object.keys(form) as (keyof FormData)[];
     setTouched(new Set(allFields));
 
@@ -234,24 +272,24 @@ export function CreateTournament() {
       >
         <div className="max-w-sm w-full text-center space-y-6">
           <div className="w-20 h-20 bg-[#e8f5e9] rounded-full flex items-center justify-center mx-auto shadow-lg">
-            <CheckCircle2 className="w-10 h-10 text-[#006b20]" />
+            <CheckCircle2 className="w-10 h-10 text-primary" />
           </div>
           <div className="space-y-2">
             <h2 className="text-xl font-black text-[#191c1c]">تم إنشاء البطولة! 🎉</h2>
-            <p className="text-sm text-[#3e4a3c]/70">
+            <p className="text-sm text-on-surface-variant/70">
               تم إنشاء البطولة "{form.name}" بنجاح. يمكنك الآن إدارتها وقبول تسجيلات الفرق.
             </p>
           </div>
           <div className="flex flex-col gap-3">
             <button
               onClick={() => navigate(`/tournaments/${createdId}`)}
-              className="w-full h-11 bg-[#006b20] hover:bg-[#005318] text-white font-bold rounded-xl text-sm transition-all"
+              className="w-full h-11 bg-primary hover:bg-[#005318] text-white font-bold rounded-xl text-sm transition-all"
             >
               عرض البطولة
             </button>
             <button
               onClick={() => navigate('/tournaments')}
-              className="w-full h-11 border border-[#e1e3e1] text-[#3e4a3c] font-bold rounded-xl text-sm hover:bg-[#f0f2f0] transition-all"
+              className="w-full h-11 border border-[#e1e3e1] text-on-surface-variant font-bold rounded-xl text-sm hover:bg-[#f0f2f0] transition-all"
             >
               العودة للقائمة
             </button>
@@ -268,7 +306,7 @@ export function CreateTournament() {
   return (
     <div className="min-h-screen bg-[#f6f8f7] pb-16" dir="rtl">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#002b0e] via-[#006b20] to-[#00a336] pt-12 pb-8 px-4 relative overflow-hidden">
+      <div className="bg-linear-to-br from-[#002b0e] via-primary to-[#00a336] pt-12 pb-8 px-4 relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-10"
           style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, white 1px, transparent 1px)', backgroundSize: '32px 32px' }}
@@ -301,7 +339,7 @@ export function CreateTournament() {
           <FormSection title="معلومات البطولة الأساسية" icon={<Info className="w-4 h-4" />}>
             <FormField label="اسم البطولة" required error={touched.has('name') ? errors.name : undefined}>
               <div className="relative">
-                <Trophy className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#006b20]" />
+                <Trophy className="absolute inset-s-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                 <input
                   type="text"
                   placeholder="مثال: October Weekend League"
@@ -339,8 +377,8 @@ export function CreateTournament() {
                     onClick={() => { handleChange('type', t.value); touch('type'); }}
                     className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition-all ${
                       form.type === t.value
-                        ? 'border-[#006b20] bg-[#e8f5e9] ring-2 ring-[#006b20]/20'
-                        : 'border-[#e1e3e1] hover:border-[#006b20]/40 hover:bg-[#f6f8f7]'
+                        ? 'border-primary bg-[#e8f5e9] ring-2 ring-primary/20'
+                        : 'border-[#e1e3e1] hover:border-primary/40 hover:bg-[#f6f8f7]'
                     }`}
                   >
                     <span className="text-2xl">{t.icon}</span>
@@ -356,7 +394,7 @@ export function CreateTournament() {
           {/* ── Section 2: Teams ── */}
           <FormSection title="إعدادات الفرق" icon={<Users className="w-4 h-4" />}>
             <FormField label="عدد الفرق المشاركة" required>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {TEAM_COUNTS.map((count) => (
                   <button
                     key={count}
@@ -364,21 +402,21 @@ export function CreateTournament() {
                     onClick={() => handleChange('numberOfTeams', count)}
                     className={`flex flex-col items-center gap-1 p-4 rounded-xl border font-black text-sm transition-all ${
                       form.numberOfTeams === count
-                        ? 'border-[#006b20] bg-[#e8f5e9] text-[#006b20] ring-2 ring-[#006b20]/20'
-                        : 'border-[#e1e3e1] text-[#3e4a3c] hover:border-[#006b20]/40 hover:bg-[#f6f8f7]'
+                        ? 'border-primary bg-[#e8f5e9] text-primary ring-2 ring-primary/20'
+                        : 'border-[#e1e3e1] text-on-surface-variant hover:border-primary/40 hover:bg-[#f6f8f7]'
                     }`}
                   >
                     <span className="text-2xl font-black">{count}</span>
                     <span className="text-[10px] font-bold">فريق</span>
-                    <span className="text-[9px] text-[#3e4a3c]/60">
+                    <span className="text-[9px] text-on-surface-variant/60">
                       {count / 4} مجموعات
                     </span>
                   </button>
                 ))}
               </div>
               <div className="bg-[#f6f8f7] rounded-xl p-3 border border-[#e1e3e1] mt-2">
-                <div className="flex items-center gap-2 text-xs text-[#3e4a3c]">
-                  <Shield className="w-3.5 h-3.5 text-[#006b20] shrink-0" />
+                <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+                  <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
                   <span>
                     مع {form.numberOfTeams} فريق: {form.numberOfTeams / 4} مجموعات × 4 فرق
                     — أعلى فريقين من كل مجموعة يتأهلان للدور الإقصائي
@@ -390,14 +428,14 @@ export function CreateTournament() {
 
           {/* ── Section 3: Prizes & Fees ── */}
           <FormSection title="الجوائز والرسوم" icon={<DollarSign className="w-4 h-4" />}>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 label="الجائزة الكبرى"
                 required
                 error={touched.has('prize') ? errors.prize : undefined}
               >
                 <div className="relative">
-                  <Trophy className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
+                  <Trophy className="absolute inset-s-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
                   <input
                     type="text"
                     placeholder="مثال: EGP 15,000"
@@ -415,7 +453,7 @@ export function CreateTournament() {
                 error={touched.has('price') ? errors.price : undefined}
               >
                 <div className="relative">
-                  <DollarSign className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#006b20]" />
+                  <DollarSign className="absolute inset-s-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                   <input
                     type="number"
                     min={0}
@@ -431,9 +469,9 @@ export function CreateTournament() {
             </div>
           </FormSection>
 
-          {/* ── Section 4: Dates ── */}
-          <FormSection title="تواريخ البطولة" icon={<CalendarDays className="w-4 h-4" />}>
-            <div className="grid grid-cols-2 gap-4">
+          {/* ── Section 4: الموعد والمكان ── */}
+          <FormSection title="الموعد والمكان" icon={<CalendarDays className="w-4 h-4" />}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 label="تاريخ البداية"
                 required
@@ -468,28 +506,52 @@ export function CreateTournament() {
           {/* ── Section 5: Field ── */}
           <FormSection title="الملعب" icon={<MapPin className="w-4 h-4" />}>
             <FormField
-              label="معرّف الملعب"
+              label="اختر الملعب"
               required
               error={touched.has('fieldId') ? errors.fieldId : undefined}
-              hint="أدخل ID الملعب المسجل في منصة حجززايا"
+              hint={ownerFields.length === 0 && !isLoadingFields ? 'لا توجد ملاعب مسجلة — أضف ملعبك أولاً من صفحة الملاعب' : undefined}
             >
               <div className="relative">
-                <MapPin className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#006b20]" />
-                <input
-                  type="text"
-                  placeholder="مثال: field-123"
-                  value={form.fieldId}
-                  onChange={(e) => handleChange('fieldId', e.target.value)}
-                  onBlur={() => touch('fieldId')}
-                  className={`${inputClass('fieldId')} ps-10`}
-                />
+                <MapPin className="absolute inset-s-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary z-10 pointer-events-none" />
+                {isLoadingFields ? (
+                  <div className={`${inputClass('fieldId')} ps-10 flex items-center gap-2 text-on-surface-variant/50`}>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    جار تحميل ملاعبك...
+                  </div>
+                ) : ownerFields.length > 0 ? (
+                  <div className="relative">
+                    <select
+                      value={form.fieldId}
+                      onChange={(e) => { handleChange('fieldId', e.target.value); touch('fieldId'); }}
+                      onBlur={() => touch('fieldId')}
+                      className={`${inputClass('fieldId')} ps-10 pe-8 appearance-none cursor-pointer`}
+                    >
+                      <option value="">-- اختر الملعب --</option>
+                      {ownerFields.map((f) => (
+                        <option key={f.id} value={String(f.id)}>
+                          {f.name} — {f.city}{f.governorate ? ` (${f.governorate})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute inset-e-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50 pointer-events-none" />
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="أدخل معرّف الملعب يدوياً..."
+                    value={form.fieldId}
+                    onChange={(e) => handleChange('fieldId', e.target.value)}
+                    onBlur={() => touch('fieldId')}
+                    className={`${inputClass('fieldId')} ps-10`}
+                  />
+                )}
               </div>
             </FormField>
           </FormSection>
 
           {/* ── Preview Summary ── */}
           {form.name && (
-            <div className="bg-gradient-to-br from-[#003d12] to-[#006b20] rounded-2xl p-5 space-y-3">
+            <div className="bg-linear-to-br from-[#003d12] to-primary rounded-2xl p-5 space-y-3">
               <h3 className="text-white font-bold text-sm flex items-center gap-2">
                 <FileText className="w-4 h-4" /> معاينة البطولة
               </h3>
@@ -522,7 +584,7 @@ export function CreateTournament() {
             <button
               type="button"
               onClick={() => navigate('/tournaments')}
-              className="flex-1 h-12 border border-[#e1e3e1] text-[#3e4a3c] font-bold rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-[#f0f2f0] transition-all"
+              className="flex-1 h-12 border border-[#e1e3e1] text-on-surface-variant font-bold rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-[#f0f2f0] transition-all"
             >
               <ChevronRight className="w-4 h-4" />
               إلغاء
@@ -530,7 +592,7 @@ export function CreateTournament() {
             <button
               type="submit"
               disabled={isSubmitting || !isFormValid}
-              className="flex-[2] h-12 bg-[#006b20] hover:bg-[#005318] disabled:opacity-50 disabled:cursor-not-allowed text-white font-black rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98]"
+              className="flex-2 h-12 bg-primary hover:bg-[#005318] disabled:opacity-50 disabled:cursor-not-allowed text-white font-black rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98]"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

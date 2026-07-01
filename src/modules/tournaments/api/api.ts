@@ -11,179 +11,239 @@ import type {
   JoinTournamentPayload,
   CreateTeamPayload,
   SetRewardsPayload,
+  PaymentRequest,
+  PaymentStatus,
 } from '../types/tournament';
 
-const BACKEND_URL = 'https://upwind-schnapps-uncoated.ngrok-free.dev';
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+}
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+export interface ApiError {
+  status: number;
+  statusText: string;
+  message: string;
+  url: string;
+  details?: unknown;
+}
 
-const getAuthHeaders = (): HeadersInit => ({
-  'ngrok-skip-browser-warning': 'true',
-  Accept: 'application/json',
-  Authorization: `Bearer ${localStorage.getItem('hagzaya_token') || ''}`,
-});
+const BACKEND_URL = import.meta.env.VITE_PUBLIC_API_URL || 'https://upwind-schnapps-uncoated.ngrok-free.dev';
 
-const getJsonHeaders = (): HeadersInit => ({
-  ...getAuthHeaders(),
+const createAuthHeaders = (): HeadersInit => {
+  const token = localStorage.getItem('hagzaya_token');
+
+  return {
+    'ngrok-skip-browser-warning': 'true',
+    Accept: 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
+const createJsonHeaders = (): HeadersInit => ({
+  ...createAuthHeaders(),
   'Content-Type': 'application/json',
 });
 
-const handleResponse = async <T>(response: Response): Promise<T> => {
-  if (!response.ok) {
-    const errorText = await response.text();
-    let message = `HTTP ${response.status}`;
+const parseErrorResponse = async (response: Response, text: string): Promise<ApiError> => {
+  const contentType = response.headers.get('content-type') ?? '';
+  let parsed: unknown = text;
+
+  if (contentType.includes('application/json')) {
     try {
-      const parsed = JSON.parse(errorText);
-      message = parsed.message || parsed.title || message;
+      parsed = JSON.parse(text);
     } catch {
-      message = errorText || message;
+      parsed = text;
     }
-    throw new Error(message);
   }
-  const blob = await response.blob();
-  const text = await blob.text();
-  if (!text) return undefined as T;
-  return JSON.parse(text) as T;
+
+  const message =
+    typeof parsed === 'object' && parsed !== null && 'message' in parsed
+      ? String((parsed as Record<string, unknown>).message)
+      : text || `${response.status} ${response.statusText}`;
+
+  return {
+    status: response.status,
+    statusText: response.statusText,
+    message,
+    url: response.url,
+    details: parsed,
+  };
 };
 
-// ── Tournament API ────────────────────────────────────────────────────────────
+const parseResponse = async <T>(response: Response): Promise<T> => {
+  const text = await response.text();
+  const contentType = response.headers.get('content-type') ?? '';
+
+  if (!response.ok) {
+    const error = await parseErrorResponse(response, text);
+    throw error;
+  }
+
+  if (!text) {
+    return undefined as unknown as T;
+  }
+
+  if (contentType.includes('application/json')) {
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      return text as unknown as T;
+    }
+  }
+
+  return text as unknown as T;
+};
+
+const request = async <T>(path: string, init: RequestInit = {}): Promise<T> => {
+  const url = `${BACKEND_URL}${path}`;
+  const headers = {
+    ...createAuthHeaders(),
+    ...init.headers,
+  } as HeadersInit;
+
+  try {
+    const response = await fetch(url, {
+      ...init,
+      headers,
+    });
+
+    return await parseResponse<T>(response);
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Network error: ${error.message}`);
+    }
+
+    throw error;
+  }
+};
+
+const buildQueryString = (params: Record<string, string | number | undefined>): string => {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      searchParams.append(key, String(value));
+    }
+  });
+
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : '';
+};
 
 export const tournamentsApi = {
-  /**
-   * GET /api/tournaments
-   * Fetch all tournaments with optional filters.
-   */
+  // ─────────────────────────────────────────────────────────────────────────
+  // PUBLIC / SHARED
+  // ─────────────────────────────────────────────────────────────────────────
+
   getAll: async (params?: GetTournamentsParams): Promise<Tournament[]> => {
-    const query = new URLSearchParams();
-    if (params?.status) query.append('status', params.status);
-    if (params?.search) query.append('search', params.search);
-    if (params?.limit) query.append('limit', params.limit.toString());
-    const qs = query.toString() ? `?${query.toString()}` : '';
-    const res = await fetch(`${BACKEND_URL}/api/tournaments${qs}`, {
-      headers: getAuthHeaders(),
+    const query = buildQueryString({
+      status: params?.status,
+      search: params?.search,
+      limit: params?.limit,
     });
-    return handleResponse<Tournament[]>(res);
+
+    return request<Tournament[]>(`/api/tournaments${query}`);
   },
 
-  /**
-   * GET /api/tournaments/upcoming
-   * Fetch upcoming tournaments (used on the dashboard / explore hero).
-   */
   getUpcoming: async (limit = 6): Promise<Tournament[]> => {
-    const res = await fetch(
-      `${BACKEND_URL}/api/tournaments/upcoming?limit=${limit}`,
-      { headers: getAuthHeaders() }
-    );
-    return handleResponse<Tournament[]>(res);
+    return request<Tournament[]>(`/api/tournaments/upcoming?limit=${limit}`);
   },
 
-  /**
-   * GET /api/tournaments/{id}
-   * Fetch a single tournament with full detail (groups, matches, brackets).
-   */
-  getById: async (id: string): Promise<Tournament> => {
-    const res = await fetch(`${BACKEND_URL}/api/tournaments/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<Tournament>(res);
+  getById: async (id: string | number): Promise<Tournament> => {
+    return request<Tournament>(`/api/tournaments/${id}`);
   },
 
-  /**
-   * POST /api/tournaments
-   * Create a new tournament. Role: Owner / Admin.
-   */
-  create: async (payload: CreateTournamentPayload): Promise<Tournament> => {
-    const res = await fetch(`${BACKEND_URL}/api/tournaments`, {
-      method: 'POST',
-      headers: getJsonHeaders(),
-      body: JSON.stringify(payload),
-    });
-    return handleResponse<Tournament>(res);
+  getAllPlayers: async (search?: string): Promise<PlayerProfile[]> => {
+    const query = buildQueryString({ search });
+    return request<PlayerProfile[]>(`/api/tournaments/players/search${query}`);
   },
 
-  /**
-   * DELETE /api/tournaments/{id}
-   * Delete a tournament. Role: Admin.
-   */
-  delete: async (id: string): Promise<void> => {
-    const res = await fetch(`${BACKEND_URL}/api/tournaments/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<void>(res);
-  },
-
-  /**
-   * GET /api/tournaments/players/search?username=...
-   * Search players by username to add them to a team. Role: Player.
-   */
-  searchPlayers: async (username: string): Promise<PlayerProfile[]> => {
-    const res = await fetch(
-      `${BACKEND_URL}/api/tournaments/players/search?username=${encodeURIComponent(username)}`,
-      { headers: getAuthHeaders() }
-    );
-    return handleResponse<PlayerProfile[]>(res);
-  },
-
-  /**
-   * POST /api/tournaments/{id}/join
-   * Register a team for a tournament. Role: Player.
-   */
   joinTournament: async (
-    id: string,
+    id: string | number,
     payload: JoinTournamentPayload
   ): Promise<{ message: string }> => {
-    const res = await fetch(`${BACKEND_URL}/api/tournaments/${id}/join`, {
+    return request<{ message: string }>(`/api/tournaments/${id}/join`, {
       method: 'POST',
-      headers: getJsonHeaders(),
+      headers: createJsonHeaders(),
       body: JSON.stringify(payload),
     });
-    return handleResponse<{ message: string }>(res);
   },
 
-  /**
-   * POST /api/tournaments/teams
-   * Create a standalone team linked to a tournament. Role: Player / Admin.
-   */
+  getPaymentStatus: async (id: string | number): Promise<PaymentStatus> => {
+    return request<PaymentStatus>(`/api/tournaments/${id}/payment-status`);
+  },
+
+  create: async (payload: CreateTournamentPayload): Promise<Tournament> => {
+    return request<Tournament>('/api/tournaments', {
+      method: 'POST',
+      headers: createJsonHeaders(),
+      body: JSON.stringify(payload),
+    });
+  },
+
+  getPaymentRequests: async (): Promise<PaymentRequest[]> => {
+    return request<PaymentRequest[]>('/api/tournaments/payment-requests');
+  },
+
+  approvePayment: async (id: number): Promise<{ message: string }> => {
+    return request<{ message: string }>(`/api/tournaments/payments/${id}/approve`, {
+      method: 'PUT',
+      headers: createJsonHeaders(),
+    });
+  },
+
+  rejectPayment: async (
+    id: number,
+    reason: string
+  ): Promise<{ message: string }> => {
+    return request<{ message: string }>(`/api/tournaments/payments/${id}/reject`, {
+      method: 'PUT',
+      headers: createJsonHeaders(),
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  delete: async (id: string): Promise<void> => {
+    return request<void>(`/api/tournaments/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   createTeam: async (
     payload: CreateTeamPayload
   ): Promise<{ id: string; name: string }> => {
-    const res = await fetch(`${BACKEND_URL}/api/tournaments/teams`, {
+    return request<{ id: string; name: string }>('/api/tournaments/teams', {
       method: 'POST',
-      headers: getJsonHeaders(),
+      headers: createJsonHeaders(),
       body: JSON.stringify(payload),
     });
-    return handleResponse<{ id: string; name: string }>(res);
   },
 
   setRewards: async (
     payload: SetRewardsPayload
   ): Promise<{ message: string }> => {
-    const res = await fetch(`${BACKEND_URL}/api/tournaments/rewards`, {
+    return request<{ message: string }>('/api/tournaments/rewards', {
       method: 'POST',
-      headers: getJsonHeaders(),
+      headers: createJsonHeaders(),
       body: JSON.stringify(payload),
     });
-    return handleResponse<{ message: string }>(res);
   },
 
-  /**
-   * PUT /api/matches/{id}/score
-   * Update match score. Role: Admin / Owner.
-   */
   async updateMatchScore(
     matchId: number | string,
     scoreA: number,
     scoreB: number
   ): Promise<{ message: string }> {
-    const response = await fetch(
-      `${BACKEND_URL}/api/matches/${Number(matchId)}/score`,
-      {
-        method: 'PUT',
-        headers: getJsonHeaders(),
-        body: JSON.stringify({ scoreA, scoreB }),
-      }
-    );
-    return handleResponse<{ message: string }>(response);
+    const id = Number(matchId);
+    if (Number.isNaN(id)) {
+      throw new Error('Invalid matchId provided to updateMatchScore');
+    }
+
+    return request<{ message: string }>(`/api/matches/${id}/score`, {
+      method: 'PUT',
+      headers: createJsonHeaders(),
+      body: JSON.stringify({ scoreA, scoreB }),
+    });
   },
 };

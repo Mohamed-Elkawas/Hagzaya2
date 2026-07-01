@@ -47,6 +47,7 @@ export interface Field {
     pointsDiscountMaxPct?: number;
     pointsPerBooking?: number;
     amenities?: string | string[]; // دعم مصفوفة أو نص للتحويل الآمن
+    availableDates?: string[]; // تواريخ المتاحة
 }
 
 export interface FieldFilterParams {

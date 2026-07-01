@@ -45,10 +45,10 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all ${
                 step.num < currentStep
-                  ? 'bg-[#006b20] text-white'
+                  ? 'bg-primary text-white'
                   : step.num === currentStep
-                  ? 'bg-[#006b20] text-white ring-4 ring-[#006b20]/20'
-                  : 'bg-[#f0f2f0] text-[#3e4a3c]/50'
+                  ? 'bg-primary text-white ring-4 ring-primary/20'
+                  : 'bg-[#f0f2f0] text-on-surface-variant/50'
               }`}
             >
               {step.num < currentStep ? (
@@ -59,7 +59,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             </div>
             <span
               className={`text-[10px] font-semibold whitespace-nowrap ${
-                step.num === currentStep ? 'text-[#006b20]' : 'text-[#3e4a3c]/50'
+                step.num === currentStep ? 'text-primary' : 'text-on-surface-variant/50'
               }`}
             >
               {step.label}
@@ -68,7 +68,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           {idx < steps.length - 1 && (
             <div
               className={`h-0.5 w-12 mx-1 mb-4 transition-all ${
-                step.num < currentStep ? 'bg-[#006b20]' : 'bg-[#e1e3e1]'
+                step.num < currentStep ? 'bg-primary' : 'bg-[#e1e3e1]'
               }`}
             />
           )}
@@ -88,25 +88,25 @@ function Step1({ onNext }: { onNext: () => void }) {
     <div className="space-y-5">
       <div>
         <h3 className="text-base font-bold text-[#191c1c] mb-1">اسم الفريق</h3>
-        <p className="text-xs text-[#3e4a3c]/70">
+        <p className="text-xs text-on-surface-variant/70">
           اختر اسماً مميزاً يعبر عن فريقك في البطولة
         </p>
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-[#3e4a3c]">
+        <label className="text-sm font-semibold text-on-surface-variant">
           اسم الفريق <span className="text-red-500">*</span>
         </label>
         <div className="relative">
-          <div className="absolute start-3 top-1/2 -translate-y-1/2">
-            <Shield className="w-4 h-4 text-[#006b20]" />
+          <div className="absolute inset-s-3 top-1/2 -translate-y-1/2">
+            <Shield className="w-4 h-4 text-primary" />
           </div>
           <input
             type="text"
             placeholder="مثال: النسور الذهبية"
             value={registrationData.teamName}
             onChange={(e) => setTeamName(e.target.value)}
-            className="w-full ps-10 pe-4 h-11 rounded-xl border border-[#e1e3e1] text-sm font-medium text-[#191c1c] placeholder-[#3e4a3c]/40 focus:outline-none focus:border-[#006b20] focus:ring-2 focus:ring-[#006b20]/20 transition-all"
+            className="w-full ps-10 pe-4 h-11 rounded-xl border border-[#e1e3e1] text-sm font-medium text-[#191c1c] placeholder-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           />
         </div>
         {registrationData.teamName.length > 0 &&
@@ -118,7 +118,7 @@ function Step1({ onNext }: { onNext: () => void }) {
       <button
         onClick={onNext}
         disabled={!isValid}
-        className="w-full h-11 bg-[#006b20] hover:bg-[#005318] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+        className="w-full h-11 bg-primary hover:bg-[#005318] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
       >
         التالي
         <ChevronLeft className="w-4 h-4" />
@@ -153,8 +153,19 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
     debounceRef.current = setTimeout(async () => {
       setSearchingPlayers(true);
       try {
-        const results = await tournamentsApi.searchPlayers(playerSearchQuery);
-        setPlayerSearchResults(Array.isArray(results) ? results : []);
+        const allPlayers = await tournamentsApi.getAllPlayers();
+        const playersArray = Array.isArray(allPlayers) ? allPlayers : [];
+        const query = playerSearchQuery.toLowerCase();
+        
+        const filtered = playersArray.filter(p => {
+            const usernameMatch = p.username?.toLowerCase().includes(query);
+            const fullNameMatch = p.fullName?.toLowerCase().includes(query);
+            const firstNameMatch = (p as any).firstName?.toLowerCase().includes(query);
+            const lastNameMatch = (p as any).lastName?.toLowerCase().includes(query);
+            return usernameMatch || fullNameMatch || firstNameMatch || lastNameMatch;
+        });
+
+        setPlayerSearchResults(filtered);
       } catch {
         setPlayerSearchResults([]);
       } finally {
@@ -172,61 +183,58 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
     <div className="space-y-4">
       <div>
         <h3 className="text-base font-bold text-[#191c1c] mb-1">إضافة أعضاء الفريق</h3>
-        <p className="text-xs text-[#3e4a3c]/70">ابحث عن اللاعبين بالاسم وأضفهم للفريق</p>
+        <p className="text-xs text-on-surface-variant/70">ابحث عن اللاعبين بالاسم وأضفهم للفريق</p>
       </div>
 
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3e4a3c]/50" />
+        <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
         <input
           type="text"
           placeholder="ابحث باسم المستخدم..."
           value={playerSearchQuery}
           onChange={(e) => setPlayerSearchQuery(e.target.value)}
-          className="w-full ps-10 pe-4 h-10 rounded-xl border border-[#e1e3e1] text-sm text-[#191c1c] placeholder-[#3e4a3c]/40 focus:outline-none focus:border-[#006b20] focus:ring-2 focus:ring-[#006b20]/20 transition-all"
+          className="w-full ps-10 pe-4 h-10 rounded-xl border border-[#e1e3e1] text-sm text-[#191c1c] placeholder-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
         />
         {isSearchingPlayers && (
-          <Loader2 className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#006b20] animate-spin" />
+          <Loader2 className="absolute inset-e-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
         )}
       </div>
 
       {/* Search Results */}
       {playerSearchResults.length > 0 && (
-        <div className="border border-[#e1e3e1] rounded-xl overflow-hidden max-h-40 overflow-y-auto divide-y divide-[#f0f2f0]">
+        <div className="border border-[#e1e3e1] rounded-xl overflow-hidden max-h-44 overflow-y-auto divide-y divide-[#f0f2f0] shadow-lg">
           {playerSearchResults.map((player: PlayerProfile) => (
             <div
               key={player.id}
               className="flex items-center gap-3 px-3 py-2.5 hover:bg-[#f6f8f7] transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-[#e8f5e9] flex items-center justify-center text-xs font-bold text-[#006b20] shrink-0">
-                {player.username.charAt(0).toUpperCase()}
+              <div className="w-9 h-9 rounded-full bg-linear-to-br from-primary to-[#00a336] flex items-center justify-center text-xs font-black text-white shrink-0 shadow-sm">
+                {(player.fullName ?? player.username).charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#191c1c] truncate">
-                  {player.username}
+                <p className="text-sm font-bold text-[#191c1c] truncate">
+                  {player.fullName ?? (`${(player as any).firstName || ''} ${(player as any).lastName || ''}`.trim() || player.username)}
                 </p>
-                {player.position && (
-                  <p className="text-[10px] text-[#3e4a3c]/60">{player.position}</p>
-                )}
+                <p className="text-[10px] text-on-surface-variant/60 truncate">
+                  @{player.username}
+                  {player.position ? ` · ${player.position}` : ''}
+                </p>
               </div>
               <button
                 onClick={() =>
                   isAlreadyAdded(player.id) ? removeMember(player.id) : addMember(player)
                 }
-                className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors ${
+                className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors shrink-0 ${
                   isAlreadyAdded(player.id)
                     ? 'bg-red-50 text-red-500 hover:bg-red-100'
-                    : 'bg-[#e8f5e9] text-[#006b20] hover:bg-[#c8e6c9]'
+                    : 'bg-[#e8f5e9] text-primary hover:bg-[#c8e6c9]'
                 }`}
               >
                 {isAlreadyAdded(player.id) ? (
-                  <>
-                    <UserMinus className="w-3 h-3" /> إزالة
-                  </>
+                  <><UserMinus className="w-3 h-3" /> إزالة</>
                 ) : (
-                  <>
-                    <UserPlus className="w-3 h-3" /> إضافة
-                  </>
+                  <><UserPlus className="w-3 h-3" /> إضافة</>
                 )}
               </button>
             </div>
@@ -237,7 +245,7 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       {/* Added Members */}
       {registrationData.selectedPlayers.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-bold text-[#3e4a3c]">
+          <p className="text-xs font-bold text-on-surface-variant">
             أعضاء الفريق ({registrationData.selectedPlayers.length})
           </p>
           <div className="flex flex-wrap gap-2">
@@ -246,12 +254,12 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
                 key={p.id}
                 className="flex items-center gap-1.5 bg-[#e8f5e9] border border-[#c8e6c9] rounded-full px-2.5 py-1"
               >
-                <span className="text-xs font-semibold text-[#006b20]">
-                  {p.username}
+                <span className="text-xs font-semibold text-primary">
+                  {p.fullName ?? (`${(p as any).firstName || ''} ${(p as any).lastName || ''}`.trim() || p.username)}
                 </span>
                 <button
                   onClick={() => removeMember(p.id)}
-                  className="text-[#006b20]/60 hover:text-red-500 transition-colors"
+                  className="text-primary/60 hover:text-red-500 transition-colors"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -265,14 +273,14 @@ function Step2({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
       <div className="flex gap-3 pt-2">
         <button
           onClick={onBack}
-          className="flex-1 h-11 border border-[#e1e3e1] text-[#3e4a3c] font-bold rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-[#f6f8f7] transition-all"
+          className="flex-1 h-11 border border-[#e1e3e1] text-on-surface-variant font-bold rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-[#f6f8f7] transition-all"
         >
           <ChevronRight className="w-4 h-4" />
           السابق
         </button>
         <button
           onClick={onNext}
-          className="flex-1 h-11 bg-[#006b20] hover:bg-[#005318] text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+          className="flex-1 h-11 bg-primary hover:bg-[#005318] text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
         >
           التالي
           <ChevronLeft className="w-4 h-4" />
@@ -300,6 +308,8 @@ function Step3({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const paymentOptions = [
     {
@@ -322,13 +332,30 @@ function Step3({
 
   const handleSubmit = async () => {
     if (!registrationData.paymentMethod) return;
+    if (!proofFile) {
+        setSubmitError('يرجى إرفاق صورة تحويل (إيصال الدفع)');
+        return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
     try {
+      let paymentProofUrl = '';
+      if (proofFile) {
+          // Read the file as a data URL to pass to the backend payload
+          paymentProofUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.readAsDataURL(proofFile);
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = error => reject(error);
+          });
+      }
+
       await tournamentsApi.joinTournament(tournamentId, {
         teamName: registrationData.teamName,
-        memberIds: registrationData.memberIds,
+        memberIds: registrationData.memberIds.map(String),
         paymentMethod: registrationData.paymentMethod as PaymentMethod,
+        paymentProofUrl: paymentProofUrl || undefined,
       });
       setSubmitted(true);
       setTimeout(() => {
@@ -346,11 +373,11 @@ function Step3({
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-4 text-center">
         <div className="w-16 h-16 bg-[#e8f5e9] rounded-full flex items-center justify-center">
-          <CheckCircle2 className="w-9 h-9 text-[#006b20]" />
+          <CheckCircle2 className="w-9 h-9 text-primary" />
         </div>
         <div>
           <h3 className="text-base font-black text-[#191c1c]">تم التسجيل بنجاح! 🎉</h3>
-          <p className="text-xs text-[#3e4a3c]/70 mt-1">
+          <p className="text-xs text-on-surface-variant/70 mt-1">
             طلب تسجيل فريقك قيد المراجعة. انتظر موافقة المنظم.
           </p>
         </div>
@@ -362,8 +389,11 @@ function Step3({
     <div className="space-y-4">
       <div>
         <h3 className="text-base font-bold text-[#191c1c] mb-1">طريقة الدفع</h3>
-        <p className="text-xs text-[#3e4a3c]/70">
-          رسوم التسجيل: <strong className="text-[#006b20]">{price} جنيه</strong>
+        <p className="text-xs text-on-surface-variant/70">
+          رسوم التسجيل:{' '}
+          <strong className="text-primary">
+            {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', minimumFractionDigits: 0 }).format(price)}
+          </strong>
         </p>
       </div>
 
@@ -371,49 +401,68 @@ function Step3({
         {paymentOptions.map((opt) => {
           const isSelected = registrationData.paymentMethod === opt.method;
           return (
-            <button
-              key={opt.method}
-              onClick={() => setPaymentMethod(opt.method)}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border text-start transition-all ${
-                isSelected ? opt.active : `${opt.color} hover:opacity-80`
-              }`}
-            >
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
-                {opt.icon}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-[#191c1c]">{opt.label}</p>
-                <p className="text-[11px] text-[#3e4a3c]/70">{opt.desc}</p>
-              </div>
-              <div
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                  isSelected
-                    ? 'border-[#006b20] bg-[#006b20]'
-                    : 'border-[#e1e3e1]'
-                }`}
-              >
-                {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
-              </div>
-            </button>
+            <div key={opt.method} className="space-y-2">
+                <button
+                  onClick={() => setPaymentMethod(opt.method)}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border text-start transition-all ${
+                    isSelected ? opt.active : `${opt.color} hover:opacity-80`
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
+                    {opt.icon}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-[#191c1c]">{opt.label}</p>
+                    <p className="text-[11px] text-on-surface-variant/70">{opt.desc}</p>
+                  </div>
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                      isSelected
+                        ? 'border-primary bg-primary'
+                        : 'border-[#e1e3e1]'
+                    }`}
+                  >
+                    {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                  </div>
+                </button>
+                {isSelected && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
+                        <label className="block text-xs font-bold text-slate-800 mb-2">إرفاق صورة تحويل (إيصال الدفع) <span className="text-red-500">*</span></label>
+                        <input 
+                            type="file" 
+                            accept="image/*"
+                            ref={fileInputRef}
+                            onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300 focus:outline-none"
+                        />
+                        {proofFile && (
+                            <p className="text-xs text-green-600 mt-2 font-medium">تم إرفاق الملف: {proofFile.name}</p>
+                        )}
+                    </div>
+                )}
+            </div>
           );
         })}
       </div>
 
       {/* Summary */}
-      <div className="bg-[#f6f8f7] rounded-xl p-3 space-y-1.5 border border-[#e1e3e1]">
-        <div className="flex justify-between text-xs text-[#3e4a3c]">
+      <div className="bg-[#f6f8f7] rounded-xl p-3.5 space-y-2 border border-[#e1e3e1]">
+        <p className="text-[11px] font-black text-on-surface-variant uppercase tracking-wide mb-1">ملخص التسجيل</p>
+        <div className="flex justify-between text-xs text-on-surface-variant">
           <span>اسم الفريق:</span>
           <span className="font-bold text-[#191c1c]">{registrationData.teamName}</span>
         </div>
-        <div className="flex justify-between text-xs text-[#3e4a3c]">
+        <div className="flex justify-between text-xs text-on-surface-variant">
           <span>عدد الأعضاء:</span>
           <span className="font-bold text-[#191c1c]">
             {registrationData.selectedPlayers.length} لاعب
           </span>
         </div>
-        <div className="flex justify-between text-xs text-[#3e4a3c]">
-          <span>رسوم التسجيل:</span>
-          <span className="font-black text-[#006b20]">{price} جنيه</span>
+        <div className="border-t border-[#e1e3e1] pt-2 flex justify-between text-xs">
+          <span className="text-on-surface-variant">رسوم التسجيل:</span>
+          <span className="font-black text-primary text-sm">
+            {new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', minimumFractionDigits: 0 }).format(price)}
+          </span>
         </div>
       </div>
 
@@ -427,7 +476,7 @@ function Step3({
         <button
           onClick={onBack}
           disabled={isSubmitting}
-          className="flex-1 h-11 border border-[#e1e3e1] text-[#3e4a3c] font-bold rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-[#f6f8f7] transition-all disabled:opacity-50"
+          className="flex-1 h-11 border border-[#e1e3e1] text-on-surface-variant font-bold rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-[#f6f8f7] transition-all disabled:opacity-50"
         >
           <ChevronRight className="w-4 h-4" />
           السابق
@@ -435,7 +484,7 @@ function Step3({
         <button
           onClick={handleSubmit}
           disabled={!registrationData.paymentMethod || isSubmitting}
-          className="flex-1 h-11 bg-[#006b20] hover:bg-[#005318] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+          className="flex-1 h-11 bg-primary hover:bg-[#005318] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
         >
           {isSubmitting ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -473,7 +522,7 @@ export function RegisterFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -483,10 +532,10 @@ export function RegisterFormModal({
       {/* Modal Panel */}
       <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl border border-[#e1e3e1] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e1e3e1] bg-gradient-to-r from-[#003d12] to-[#006b20]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e1e3e1] bg-linear-to-r from-[#003d12] to-primary">
           <div>
             <h2 className="text-white font-black text-base">الانضمام للبطولة</h2>
-            <p className="text-white/70 text-xs mt-0.5 truncate max-w-[240px]">
+            <p className="text-white/70 text-xs mt-0.5 truncate max-w-60">
               {tournamentName}
             </p>
           </div>

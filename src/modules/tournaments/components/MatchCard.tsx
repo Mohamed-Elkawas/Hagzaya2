@@ -59,11 +59,11 @@ function TeamDisplay({ team, scoreVal, side }: {
       {team?.logoUrl ? (
         <img src={team.logoUrl} alt={team.name} className="w-12 h-12 rounded-full object-cover border-2 border-[#e1e3e1] shadow" />
       ) : (
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#e8f5e9] to-[#c8e6c9] border-2 border-[#c8e6c9] flex items-center justify-center shadow">
-          <Shield className="w-6 h-6 text-[#006b20]" />
+        <div className="w-12 h-12 rounded-full bg-linear-to-br from-[#e8f5e9] to-[#c8e6c9] border-2 border-[#c8e6c9] flex items-center justify-center shadow">
+          <Shield className="w-6 h-6 text-primary" />
         </div>
       )}
-      <p className={`text-sm font-bold text-[#191c1c] ${side === 'right' ? 'text-end' : 'text-start'} leading-tight max-w-[100px]`}>
+      <p className={`text-sm font-bold text-[#191c1c] ${side === 'right' ? 'text-end' : 'text-start'} leading-tight max-w-25`}>
         {team?.name ?? 'TBD'}
       </p>
       {scoreVal !== null && (
@@ -143,7 +143,7 @@ export function MatchCard({ match, currentRole, onScoreUpdate }: MatchCardProps)
     >
       {/* Header Bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-[#f6f8f7] border-b border-[#e1e3e1]">
-        <span className="text-[11px] font-semibold text-[#3e4a3c]/70">
+        <span className="text-[11px] font-semibold text-on-surface-variant/70">
           {stageLabels[match.stage] ?? match.stage}
         </span>
         <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export function MatchCard({ match, currentRole, onScoreUpdate }: MatchCardProps)
           {canEditScore && !isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="text-[10px] text-[#006b20] hover:text-[#004d18] font-bold flex items-center gap-0.5 transition-colors"
+              className="text-[10px] text-primary hover:text-[#004d18] font-bold flex items-center gap-0.5 transition-colors"
             >
               <Pencil className="w-3 h-3" />
               تحديث
@@ -176,16 +176,16 @@ export function MatchCard({ match, currentRole, onScoreUpdate }: MatchCardProps)
                   max={99}
                   value={editScoreA}
                   onChange={(e) => setEditScoreA(e.target.value)}
-                  className="w-12 h-10 text-center text-lg font-black rounded-xl border-2 border-[#006b20] outline-none focus:ring-2 focus:ring-[#006b20]/30"
+                  className="w-12 h-10 text-center text-lg font-black rounded-xl border-2 border-primary outline-none focus:ring-2 focus:ring-primary/30"
                 />
-                <span className="text-xl font-black text-[#3e4a3c]">:</span>
+                <span className="text-xl font-black text-on-surface-variant">:</span>
                 <input
                   type="number"
                   min={0}
                   max={99}
                   value={editScoreB}
                   onChange={(e) => setEditScoreB(e.target.value)}
-                  className="w-12 h-10 text-center text-lg font-black rounded-xl border-2 border-[#006b20] outline-none focus:ring-2 focus:ring-[#006b20]/30"
+                  className="w-12 h-10 text-center text-lg font-black rounded-xl border-2 border-primary outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
             ) : isCompleted || isLive ? (
@@ -193,14 +193,14 @@ export function MatchCard({ match, currentRole, onScoreUpdate }: MatchCardProps)
                 <span className="text-3xl font-black text-[#191c1c]">
                   {match.scoreA ?? 0}
                 </span>
-                <span className="text-xl font-black text-[#3e4a3c]/50">:</span>
+                <span className="text-xl font-black text-on-surface-variant/50">:</span>
                 <span className="text-3xl font-black text-[#191c1c]">
                   {match.scoreB ?? 0}
                 </span>
               </div>
             ) : (
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#f0f2f0]">
-                <span className="text-base font-black text-[#3e4a3c]">VS</span>
+                <span className="text-base font-black text-on-surface-variant">VS</span>
               </div>
             )}
 
@@ -210,13 +210,13 @@ export function MatchCard({ match, currentRole, onScoreUpdate }: MatchCardProps)
                 <button
                   onClick={handleSaveScore}
                   disabled={isSaving}
-                  className="w-8 h-8 bg-[#006b20] hover:bg-[#005318] text-white rounded-full flex items-center justify-center transition-colors shadow disabled:opacity-50"
+                  className="w-8 h-8 bg-primary hover:bg-[#005318] text-white rounded-full flex items-center justify-center transition-colors shadow disabled:opacity-50"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="w-8 h-8 bg-[#f0f2f0] hover:bg-[#e1e3e1] text-[#3e4a3c] rounded-full flex items-center justify-center transition-colors"
+                  className="w-8 h-8 bg-[#f0f2f0] hover:bg-[#e1e3e1] text-on-surface-variant rounded-full flex items-center justify-center transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -229,7 +229,7 @@ export function MatchCard({ match, currentRole, onScoreUpdate }: MatchCardProps)
         </div>
 
         {/* Match Time */}
-        <div className="mt-3 flex items-center gap-1.5 text-[11px] text-[#3e4a3c]/60 font-medium justify-center">
+        <div className="mt-3 flex items-center gap-1.5 text-[11px] text-on-surface-variant/60 font-medium justify-center">
           <Calendar className="w-3 h-3" />
           {formatMatchTime(match.startTime)}
         </div>

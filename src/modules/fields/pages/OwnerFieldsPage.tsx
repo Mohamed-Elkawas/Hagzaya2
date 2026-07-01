@@ -3,12 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fieldsApi } from '../api/fields.api';
+import { ownerApi } from '../../owner/api/owner.api';
+import type { DeletionSafetyCheck } from '../../owner/api/owner.api';
 import { type Field, ApprovalStatus, FieldType, FieldSurface } from '../types/fields.types';
 import type { CreateFieldPayload } from '../types/fields.types';
 import { toast } from 'sonner';
 import { 
     Plus, Building, Activity, Clock, Trash2, Edit3, 
-    MapPin, CheckCircle2, AlertCircle, XCircle, ChevronDown, Save, X, Loader2
+    MapPin, CheckCircle2, AlertCircle, XCircle, ChevronDown, Save, X, Loader2,
+    CalendarOff, ShieldAlert, Check
 } from 'lucide-react';
 
 export function OwnerFieldsPage() {
@@ -22,7 +25,6 @@ export function OwnerFieldsPage() {
             const token = localStorage.getItem('hagzaya_token');
             if (!token) return null;
             const payload = token.split('.')[1];
-            // Fix for base64url encoding
             const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
             const decoded = JSON.parse(atob(base64));
             const idStr = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
@@ -35,10 +37,23 @@ export function OwnerFieldsPage() {
 
     const ownerId = getOwnerIdFromToken();
 
-    // Modals state
-    const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
+    // ─── Modals State ────────────────────────────────────────────────────────
+    
+    // Edit state
     const [fieldToEdit, setFieldToEdit] = useState<Field | null>(null);
+    
+    // Safety Deletion Check state
+    const [deletionSafety, setDeletionSafety] = useState<DeletionSafetyCheck | null>(null);
+    const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
+
+    // Block Slots state
+    const [fieldToBlock, setFieldToBlock] = useState<Field | null>(null);
+    const [blockDate, setBlockDate] = useState('');
+    const [blockSlotsInput, setBlockSlotsInput] = useState(''); // comma separated for now
+
     const [isActionLoading, setIsActionLoading] = useState(false);
+
+    // ─── Fetchers ────────────────────────────────────────────────────────────
 
     const fetchFields = async (id: number) => {
         setIsLoading(true);
@@ -65,27 +80,39 @@ export function OwnerFieldsPage() {
     
     const handleToggleAvailability = async (field: Field) => {
         try {
-            // Optimistic update
             setFields(prev => prev.map(f => f.id === field.id ? { ...f, isAvailable: !f.isAvailable } : f));
             await fieldsApi.updateField(field.id, { isAvailable: !field.isAvailable });
             toast.success(`تم ${!field.isAvailable ? 'تفعيل' : 'إيقاف'} الملعب بنجاح.`);
         } catch (err) {
-            // Revert on failure
             setFields(prev => prev.map(f => f.id === field.id ? { ...f, isAvailable: field.isAvailable } : f));
             toast.error('فشل تحديث حالة الملعب.');
         }
     };
 
-    const confirmDelete = async () => {
-        if (!fieldToDelete) return;
+    const handleDeleteClick = async (field: Field) => {
         setIsActionLoading(true);
         try {
-            await fieldsApi.deleteField(fieldToDelete.id);
-            setFields(prev => prev.filter(f => f.id !== fieldToDelete.id));
-            toast.success('تم حذف الملعب بنجاح.');
-            setFieldToDelete(null);
+            const safety = await ownerApi.checkDeletionSafety(field.id);
+            setDeletionSafety(safety);
+            setFieldToDelete(field);
         } catch (err) {
-            toast.error('فشل حذف الملعب.');
+            toast.error('تعذر فحص حالة أمان الحذف.');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const confirmDeleteSecurely = async () => {
+        if (!fieldToDelete || !deletionSafety?.canDelete) return;
+        setIsActionLoading(true);
+        try {
+            await ownerApi.deleteFieldSecurely(fieldToDelete.id);
+            setFields(prev => prev.filter(f => f.id !== fieldToDelete.id));
+            toast.success('تم حذف الملعب بشكل آمن بنجاح.');
+            setFieldToDelete(null);
+            setDeletionSafety(null);
+        } catch (err) {
+            toast.error('فشل عملية الحذف الآمن.');
         } finally {
             setIsActionLoading(false);
         }
@@ -97,7 +124,6 @@ export function OwnerFieldsPage() {
         setIsActionLoading(true);
 
         try {
-            // Note: Update payload strictly matching the backend schema
             const payload: Partial<CreateFieldPayload> = {
                 name: fieldToEdit.name,
                 city: fieldToEdit.city,
@@ -115,12 +141,30 @@ export function OwnerFieldsPage() {
 
             await fieldsApi.updateField(fieldToEdit.id, payload);
             toast.success('تم تحديث بيانات الملعب بنجاح.');
-            if (ownerId) {
-                await fetchFields(ownerId); // Refresh to get pristine updated data
-            }
+            if (ownerId) await fetchFields(ownerId);
             setFieldToEdit(null);
         } catch (err) {
             toast.error('فشل تحديث بيانات الملعب.');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleBlockSlotsSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!fieldToBlock || !blockDate || !blockSlotsInput) return;
+        setIsActionLoading(true);
+
+        try {
+            // Split by comma and clean whitespace
+            const slots = blockSlotsInput.split(',').map(s => s.trim()).filter(Boolean);
+            await ownerApi.blockFieldSlots(fieldToBlock.id, { date: blockDate, slots });
+            toast.success(`تم حظر المواعيد بنجاح ليوم ${blockDate}`);
+            setFieldToBlock(null);
+            setBlockDate('');
+            setBlockSlotsInput('');
+        } catch (err) {
+            toast.error('فشل حظر المواعيد، يرجى التأكد من الصيغة.');
         } finally {
             setIsActionLoading(false);
         }
@@ -184,7 +228,7 @@ export function OwnerFieldsPage() {
                     <div>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight">إدارة ملاعبي</h1>
                         <p className="text-sm font-medium text-slate-500 mt-2">
-                            لوحة التحكم المركزية لإدارة ملاعبك ومتابعة حالتها ونشاطها.
+                            لوحة التحكم المركزية لإدارة ملاعبك، حظر المواعيد، ومتابعة حالتها.
                         </p>
                     </div>
                     <button
@@ -233,9 +277,7 @@ export function OwnerFieldsPage() {
                 {/* ── Grid List ── */}
                 {isLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="bg-white rounded-2xl border border-slate-200 h-[400px]" />
-                        ))}
+                        {[1, 2, 3].map(i => <div key={i} className="bg-white rounded-2xl border border-slate-200 h-[400px]" />)}
                     </div>
                 ) : fields.length === 0 ? (
                     <div className="bg-white rounded-3xl p-16 text-center border border-dashed border-slate-300">
@@ -261,9 +303,6 @@ export function OwnerFieldsPage() {
                                         src={getImageUrl(field.photos)} 
                                         alt={field.name}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1518605368461-1ee7e53f1f3a?q=80&w=800&auto=format&fit=crop';
-                                        }}
                                     />
                                     <div className="absolute top-4 right-4">
                                         {getStatusBadge(field.approvalStatus)}
@@ -305,8 +344,15 @@ export function OwnerFieldsPage() {
                                             </button>
                                         </div>
 
-                                        {/* Edit/Delete */}
+                                        {/* Actions */}
                                         <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={() => setFieldToBlock(field)}
+                                                className="w-9 h-9 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-colors"
+                                                title="حظر مواعيد للصيانة"
+                                            >
+                                                <CalendarOff size={16} />
+                                            </button>
                                             <button 
                                                 onClick={() => setFieldToEdit(field)}
                                                 className="w-9 h-9 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors"
@@ -315,11 +361,12 @@ export function OwnerFieldsPage() {
                                                 <Edit3 size={16} />
                                             </button>
                                             <button 
-                                                onClick={() => setFieldToDelete(field)}
-                                                className="w-9 h-9 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors"
+                                                onClick={() => handleDeleteClick(field)}
+                                                disabled={isActionLoading}
+                                                className="w-9 h-9 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors disabled:opacity-50"
                                                 title="حذف"
                                             >
-                                                <Trash2 size={16} />
+                                                {isActionLoading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={16} />}
                                             </button>
                                         </div>
                                     </div>
@@ -332,33 +379,123 @@ export function OwnerFieldsPage() {
 
             {/* ─── MODALS ───────────────────────────────────────────────────────────── */}
 
-            {/* Delete Confirmation Modal */}
-            {fieldToDelete && (
+            {/* Safety Interceptor Modal (Deletion Check) */}
+            {deletionSafety && fieldToDelete && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-center">
-                        <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <AlertCircle size={32} className="text-rose-600" />
-                        </div>
-                        <h3 className="text-xl font-black text-slate-900 mb-2">حذف الملعب؟</h3>
-                        <p className="text-slate-500 font-medium mb-8 leading-relaxed">
-                            هل أنت متأكد من رغبتك في حذف <strong>{fieldToDelete.name}</strong> نهائياً؟ لا يمكن التراجع عن هذا الإجراء.
-                        </p>
-                        <div className="flex gap-3">
+                    <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        {!deletionSafety.canDelete ? (
+                            <>
+                                <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <ShieldAlert size={32} className="text-rose-600" />
+                                </div>
+                                <h3 className="text-xl font-black text-slate-900 mb-2 text-center">إجراء غير مصرح به</h3>
+                                <p className="text-slate-600 text-sm font-medium mb-6 text-center leading-relaxed">
+                                    لا يمكنك حذف <strong>{deletionSafety.fieldName}</strong> حالياً لوجود التزامات قائمة:
+                                </p>
+                                <div className="bg-slate-50 rounded-xl p-4 space-y-3 mb-6">
+                                    <div className="flex justify-between items-center text-sm font-bold">
+                                        <span className="text-slate-600">حجوزات قادمة</span>
+                                        <span className="text-rose-600">{deletionSafety.upcomingBookings}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-bold">
+                                        <span className="text-slate-600">دورات نشطة</span>
+                                        <span className="text-rose-600">{deletionSafety.activeTournaments}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-bold">
+                                        <span className="text-slate-600">مدفوعات معلقة</span>
+                                        <span className="text-rose-600">{deletionSafety.pendingPayments}</span>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => { setDeletionSafety(null); setFieldToDelete(null); }}
+                                    className="w-full py-3 rounded-xl font-bold text-white bg-slate-800 hover:bg-slate-900 transition-colors"
+                                >
+                                    حسناً، فهمت
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <AlertCircle size={32} className="text-amber-600" />
+                                </div>
+                                <h3 className="text-xl font-black text-slate-900 mb-2 text-center">تأكيد الحذف النهائي</h3>
+                                <p className="text-slate-500 font-medium mb-8 text-center leading-relaxed">
+                                    الملعب فارغ من أي التزامات. هل أنت متأكد من رغبتك في حذف <strong>{deletionSafety.fieldName}</strong> نهائياً؟
+                                </p>
+                                <div className="flex gap-3">
+                                    <button 
+                                        onClick={() => { setDeletionSafety(null); setFieldToDelete(null); }}
+                                        disabled={isActionLoading}
+                                        className="flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                    >
+                                        إلغاء
+                                    </button>
+                                    <button 
+                                        onClick={confirmDeleteSecurely}
+                                        disabled={isActionLoading}
+                                        className="flex-1 py-3 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : 'حذف نهائي'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Time Slot Blockout Sheet */}
+            {fieldToBlock && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in slide-in-from-bottom duration-300">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-lg font-black text-slate-900">حظر مواعيد الملعب</h3>
+                                <p className="text-xs font-bold text-slate-500">{fieldToBlock.name}</p>
+                            </div>
                             <button 
-                                onClick={() => setFieldToDelete(null)}
-                                disabled={isActionLoading}
-                                className="flex-1 px-4 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                onClick={() => setFieldToBlock(null)}
+                                className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-rose-500 transition-colors"
                             >
-                                إلغاء
-                            </button>
-                            <button 
-                                onClick={confirmDelete}
-                                disabled={isActionLoading}
-                                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors flex items-center justify-center gap-2"
-                            >
-                                {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : 'حذف نهائي'}
+                                <X size={18} />
                             </button>
                         </div>
+
+                        <form onSubmit={handleBlockSlotsSubmit} className="space-y-5">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-700">تاريخ الحظر</label>
+                                <input 
+                                    type="date" 
+                                    required 
+                                    value={blockDate} 
+                                    onChange={e => setBlockDate(e.target.value)}
+                                    className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" 
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-700">المواعيد المراد حظرها (مفصولة بفاصلة)</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    placeholder="مثال: 18:00, 19:00, 20:00"
+                                    value={blockSlotsInput} 
+                                    onChange={e => setBlockSlotsInput(e.target.value)}
+                                    className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50 text-left" 
+                                    dir="ltr"
+                                />
+                                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                    أدخل المواعيد التي ترغب في إغلاقها عن الحجز، مثلاً للصيانة. سيتم إزالتها مؤقتاً من النظام في هذا اليوم.
+                                </p>
+                            </div>
+
+                            <button 
+                                type="submit"
+                                disabled={isActionLoading}
+                                className="w-full py-3.5 mt-2 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                                {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : <><CalendarOff size={18} /> تطبيق الحظر</>}
+                            </button>
+                        </form>
                     </div>
                 </div>
             )}
@@ -367,85 +504,56 @@ export function OwnerFieldsPage() {
             {fieldToEdit && (
                 <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-sm">
                     <div className="bg-white w-full max-w-md h-full shadow-2xl animate-in slide-in-from-left duration-300 flex flex-col overflow-hidden">
-                        {/* Header */}
                         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                             <div>
                                 <h3 className="text-lg font-black text-slate-900">تعديل بيانات الملعب</h3>
                                 <p className="text-xs font-bold text-slate-500">{fieldToEdit.name}</p>
                             </div>
-                            <button 
-                                onClick={() => setFieldToEdit(null)}
-                                className="p-2 rounded-lg hover:bg-slate-200 text-slate-500 transition-colors"
-                            >
+                            <button onClick={() => setFieldToEdit(null)} className="p-2 rounded-lg hover:bg-slate-200 text-slate-500 transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
 
-                        {/* Form Body */}
                         <div className="flex-1 overflow-y-auto p-6">
                             <form id="edit-form" onSubmit={handleEditSubmit} className="space-y-5">
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-slate-700">اسم الملعب</label>
-                                    <input type="text" required value={fieldToEdit.name} 
-                                        onChange={e => setFieldToEdit({...fieldToEdit, name: e.target.value})}
-                                        className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
+                                    <input type="text" required value={fieldToEdit.name} onChange={e => setFieldToEdit({...fieldToEdit, name: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-700">سعر الصباح</label>
-                                        <input type="number" required value={fieldToEdit.priceAm} 
-                                            onChange={e => setFieldToEdit({...fieldToEdit, priceAm: Number(e.target.value)})}
-                                            className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
+                                        <input type="number" required value={fieldToEdit.priceAm} onChange={e => setFieldToEdit({...fieldToEdit, priceAm: Number(e.target.value)})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-700">سعر المساء</label>
-                                        <input type="number" required value={fieldToEdit.pricePm} 
-                                            onChange={e => setFieldToEdit({...fieldToEdit, pricePm: Number(e.target.value)})}
-                                            className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
+                                        <input type="number" required value={fieldToEdit.pricePm} onChange={e => setFieldToEdit({...fieldToEdit, pricePm: Number(e.target.value)})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-700">وقت الفتح</label>
-                                        <input type="time" required value={fieldToEdit.openingTime || '08:00'} 
-                                            onChange={e => setFieldToEdit({...fieldToEdit, openingTime: e.target.value})}
-                                            className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
+                                        <input type="time" required value={fieldToEdit.openingTime || '08:00'} onChange={e => setFieldToEdit({...fieldToEdit, openingTime: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-700">وقت الإغلاق</label>
-                                        <input type="time" required value={fieldToEdit.closingTime || '23:00'} 
-                                            onChange={e => setFieldToEdit({...fieldToEdit, closingTime: e.target.value})}
-                                            className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
+                                        <input type="time" required value={fieldToEdit.closingTime || '23:00'} onChange={e => setFieldToEdit({...fieldToEdit, closingTime: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-slate-700">المدينة</label>
-                                    <input type="text" required value={fieldToEdit.city} 
-                                        onChange={e => setFieldToEdit({...fieldToEdit, city: e.target.value})}
-                                        className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
+                                    <input type="text" required value={fieldToEdit.city} onChange={e => setFieldToEdit({...fieldToEdit, city: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-slate-700">العنوان</label>
-                                    <input type="text" required value={fieldToEdit.address} 
-                                        onChange={e => setFieldToEdit({...fieldToEdit, address: e.target.value})}
-                                        className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
+                                    <input type="text" required value={fieldToEdit.address} onChange={e => setFieldToEdit({...fieldToEdit, address: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                 </div>
                             </form>
                         </div>
 
-                        {/* Footer */}
                         <div className="p-6 border-t border-slate-100 bg-slate-50 flex gap-3">
-                            <button 
-                                onClick={() => setFieldToEdit(null)}
-                                disabled={isActionLoading}
-                                className="flex-1 py-3.5 rounded-xl font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 transition-colors"
-                            >
+                            <button onClick={() => setFieldToEdit(null)} disabled={isActionLoading} className="flex-1 py-3.5 rounded-xl font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 transition-colors">
                                 إلغاء
                             </button>
-                            <button 
-                                type="submit"
-                                form="edit-form"
-                                disabled={isActionLoading}
-                                className="flex-1 py-3.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
-                            >
+                            <button type="submit" form="edit-form" disabled={isActionLoading} className="flex-1 py-3.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
                                 {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : <><Save size={18} /> حفظ التعديلات</>}
                             </button>
                         </div>

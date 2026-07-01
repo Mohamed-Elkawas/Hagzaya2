@@ -62,8 +62,8 @@ function RoleSwitcher() {
   ];
   return (
     <div className="flex items-center gap-2 bg-[#f6f8f7] border border-[#e1e3e1] rounded-xl px-2 py-1">
-      <UserCog className="w-3.5 h-3.5 text-[#3e4a3c]/60" />
-      <span className="text-[10px] text-[#3e4a3c]/60 font-medium">محاكاة الدور:</span>
+      <UserCog className="w-3.5 h-3.5 text-on-surface-variant/60" />
+      <span className="text-[10px] text-on-surface-variant/60 font-medium">محاكاة الدور:</span>
       <div className="flex gap-1">
         {roles.map((r) => (
           <button
@@ -71,8 +71,8 @@ function RoleSwitcher() {
             onClick={() => setRole(r.value)}
             className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors ${
               currentRole === r.value
-                ? 'bg-[#006b20] text-white'
-                : 'text-[#3e4a3c] hover:bg-[#e1e3e1]'
+                ? 'bg-primary text-white'
+                : 'text-on-surface-variant hover:bg-[#e1e3e1]'
             }`}
           >
             {r.label}
@@ -139,7 +139,7 @@ export function TournamentExplore() {
   return (
     <div className="min-h-screen bg-[#f6f8f7] pb-16" dir="rtl">
       {/* ── HERO HEADER ── */}
-      <div className="bg-gradient-to-br from-[#002b0e] via-[#006b20] to-[#00a336] pt-12 pb-24 px-4 relative overflow-hidden">
+      <div className="bg-linear-to-br from-[#002b0e] via-primary to-[#00a336] pt-12 pb-24 px-4 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, white 1px, transparent 1px)', backgroundSize: '32px 32px' }}
         />
@@ -157,18 +157,18 @@ export function TournamentExplore() {
 
           {/* Search Bar */}
           <div className="bg-white rounded-2xl p-2 flex items-center gap-2 shadow-2xl max-w-xl mx-auto mt-6">
-            <Search className="w-4 h-4 text-[#3e4a3c]/50 ms-2 shrink-0" />
+            <Search className="w-4 h-4 text-on-surface-variant/50 ms-2 shrink-0" />
             <input
               type="text"
               placeholder="ابحث عن بطولة..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent text-sm font-medium text-[#191c1c] placeholder-[#3e4a3c]/40 outline-none border-none py-2"
+              className="flex-1 bg-transparent text-sm font-medium text-[#191c1c] placeholder-on-surface-variant/40 outline-none border-none py-2"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="text-[#3e4a3c]/50 hover:text-[#3e4a3c] transition-colors text-xs font-bold px-2"
+                className="text-on-surface-variant/50 hover:text-on-surface-variant transition-colors text-xs font-bold px-2"
               >
                 ✕
               </button>
@@ -189,8 +189,8 @@ export function TournamentExplore() {
                 onClick={() => setStatusFilter(tab.value)}
                 className={`whitespace-nowrap text-xs font-bold px-3 py-1.5 rounded-xl transition-all shrink-0 ${
                   statusFilter === tab.value
-                    ? 'bg-[#006b20] text-white shadow'
-                    : 'text-[#3e4a3c] hover:bg-[#f0f2f0]'
+                    ? 'bg-primary text-white shadow'
+                    : 'text-on-surface-variant hover:bg-[#f0f2f0]'
                 }`}
               >
                 {tab.label}
@@ -203,7 +203,7 @@ export function TournamentExplore() {
             <RoleSwitcher />
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="text-xs font-bold text-[#3e4a3c] border border-[#e1e3e1] px-3 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-[#f0f2f0] transition-colors"
+              className="text-xs font-bold text-on-surface-variant border border-[#e1e3e1] px-3 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-[#f0f2f0] transition-colors"
             >
               <Sliders className="w-3.5 h-3.5" />
               فلاتر
@@ -212,7 +212,7 @@ export function TournamentExplore() {
             {canCreate && (
               <button
                 onClick={() => navigate('/tournaments/create')}
-                className="text-xs font-black text-white bg-[#006b20] hover:bg-[#005318] px-4 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow active:scale-[0.98]"
+                className="text-xs font-black text-white bg-primary hover:bg-[#005318] px-4 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow active:scale-[0.98]"
               >
                 <Plus className="w-3.5 h-3.5" />
                 إنشاء بطولة
@@ -228,14 +228,14 @@ export function TournamentExplore() {
               {isLoading ? 'جار التحميل...' : `${filtered.length} بطولة`}
             </h2>
             {statusFilter !== 'All' && (
-              <p className="text-xs text-[#3e4a3c]/70 mt-0.5">
+              <p className="text-xs text-on-surface-variant/70 mt-0.5">
                 تصفية: {STATUS_TABS.find((t) => t.value === statusFilter)?.label}
               </p>
             )}
           </div>
           <button
             onClick={fetchTournaments}
-            className="flex items-center gap-1.5 text-xs font-bold text-[#3e4a3c] hover:text-[#006b20] transition-colors"
+            className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             تحديث
@@ -260,11 +260,11 @@ export function TournamentExplore() {
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
             <div className="w-16 h-16 bg-[#f0f2f0] rounded-full flex items-center justify-center">
-              <Trophy className="w-8 h-8 text-[#3e4a3c]/30" />
+              <Trophy className="w-8 h-8 text-on-surface-variant/30" />
             </div>
             <div>
               <h3 className="text-base font-bold text-[#191c1c]">لا توجد بطولات</h3>
-              <p className="text-sm text-[#3e4a3c]/60 mt-1">
+              <p className="text-sm text-on-surface-variant/60 mt-1">
                 {searchQuery
                   ? `لا نتائج لـ "${searchQuery}"`
                   : 'لا توجد بطولات بهذا الفلتر حالياً'}
@@ -273,7 +273,7 @@ export function TournamentExplore() {
             {canCreate && (
               <button
                 onClick={() => navigate('/tournaments/create')}
-                className="text-sm font-bold text-white bg-[#006b20] hover:bg-[#005318] px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all"
+                className="text-sm font-bold text-white bg-primary hover:bg-[#005318] px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all"
               >
                 <Plus className="w-4 h-4" />
                 إنشاء أول بطولة

@@ -41,7 +41,7 @@ interface DateSelectionPageProps {
     fieldId?: number;
 }
 
-export function DateSelectionPage({ onNext, fieldId: fieldIdProp }: DateSelectionPageProps = {}) {
+export function DateSelectionPage({ onNext, fieldId: fieldIdProp }: DateSelectionPageProps) {
     const { id: idParam } = useParams<{ id: string }>();
     const navigate = useNavigate();
     // Use prop-based fieldId when embedded in modal, otherwise fall back to route param
