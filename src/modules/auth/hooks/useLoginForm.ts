@@ -34,7 +34,7 @@ export function useLoginForm(): UseLoginFormReturn {
     identifier: '',
     password: '',
     role: 'player',
-    loginMethod: 'phone',
+    loginMethod: 'email',
     showPassword: false,
   })
 
@@ -105,7 +105,7 @@ export function useLoginForm(): UseLoginFormReturn {
           formState.identifier,
           formState.password,
           formState.loginMethod,
-          formState.role
+          formState.role as "player" | "owner" // هنا قمنا بعمل الكاستينج لحل المشكلة
         )
 
         const responseData = (response as any).data || response;
