@@ -1,72 +1,89 @@
-import { useState, useCallback, useEffect } from 'react';
+import { create } from 'zustand';
 import { playerApi } from '../api/player.api';
 import type { PlayerNotification } from '../types/player.types';
 import { toast } from 'sonner';
 
-export function usePlayerNotifications(autoFetch = true) {
-    const [notifications, setNotifications] = useState<PlayerNotification[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+interface NotificationState {
+    notifications: PlayerNotification[];
+    unreadCount: number;
+    isLoading: boolean;
+    error: string | null;
+    
+    // Actions
+    fetchNotifications: () => Promise<void>;
+    markAsRead: (notificationId: number) => Promise<void>;
+    markAllAsRead: () => Promise<void>;
+}
 
-    const fetchNotifications = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
+export const useNotificationStore = create<NotificationState>((set, get) => ({
+    notifications: [],
+    unreadCount: 0,
+    isLoading: false,
+    error: null,
+
+    fetchNotifications: async () => {
+        set({ isLoading: true, error: null });
         try {
             const data = await playerApi.getMyNotifications();
             // Sort by createdAt descending (newest first)
             const sortedData = data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setNotifications(sortedData);
+            
+            set({ 
+                notifications: sortedData,
+                unreadCount: sortedData.filter(n => !n.isRead).length,
+                isLoading: false 
+            });
         } catch (err: any) {
-            setError(err.message || 'Failed to fetch notifications');
-        } finally {
-            setIsLoading(false);
+            set({ error: err.message || 'Failed to fetch notifications', isLoading: false });
         }
-    }, []);
+    },
 
-    useEffect(() => {
-        if (autoFetch) {
-            fetchNotifications();
-        }
-    }, [autoFetch, fetchNotifications]);
-
-    const markAsRead = async (notificationId: number) => {
+    markAsRead: async (notificationId: number) => {
+        const { notifications } = get();
+        
         // Optimistic update
-        setNotifications((prev) =>
-            prev.map((n) => (n.notificationId === notificationId ? { ...n, isRead: true } : n))
+        const updatedNotifications = notifications.map((n) => 
+            n.notificationId === notificationId ? { ...n, isRead: true } : n
         );
+        
+        set({
+            notifications: updatedNotifications,
+            unreadCount: updatedNotifications.filter(n => !n.isRead).length
+        });
+        
         try {
             await playerApi.markAsRead(notificationId);
         } catch (err: any) {
             // Revert on failure
             toast.error('فشل تحديث حالة الإشعار');
-            setNotifications((prev) =>
-                prev.map((n) => (n.notificationId === notificationId ? { ...n, isRead: false } : n))
-            );
+            set({
+                notifications: notifications,
+                unreadCount: notifications.filter(n => !n.isRead).length
+            });
         }
-    };
+    },
 
-    const markAllAsRead = async () => {
+    markAllAsRead: async () => {
+        const { notifications } = get();
+        
         // Optimistic update
-        const previousState = [...notifications];
-        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        const updatedNotifications = notifications.map((n) => ({ ...n, isRead: true }));
+        
+        set({
+            notifications: updatedNotifications,
+            unreadCount: 0
+        });
+        
         try {
             await playerApi.markAllAsRead();
             toast.success('تم تحديد الكل كمقروء');
         } catch (err: any) {
+            // Revert on failure
             toast.error('فشل تحديد الإشعارات كمقروءة');
-            setNotifications(previousState);
+            set({
+                notifications: notifications,
+                unreadCount: notifications.filter(n => !n.isRead).length
+            });
         }
-    };
-
-    const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-    return {
-        notifications,
-        unreadCount,
-        isLoading,
-        error,
-        fetchNotifications,
-        markAsRead,
-        markAllAsRead,
-    };
-}
+    }
+}));

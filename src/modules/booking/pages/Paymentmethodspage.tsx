@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { BookingStepper } from '../components/BookingStepper';
 import { useBookingFlow } from '../hooks/useBookingFlow';
-import { PaymentMethod, PAYMENT_METHOD_LABELS } from '../types/Booking.enums';
+import { PaymentMethod } from '../types/Booking.enums';
+import { useLanguage } from '../../../core/context/LanguageContext';
 
-// ── fieldId removed from props — it was declared but never used ───────────────
 interface PaymentMethodsPageProps {
     onNext: () => void;
     onBack: () => void;
 }
 
-function formatTime(timeStr: string) {
+function formatTime(timeStr: string, lang: 'ar' | 'en') {
     try {
         if (!timeStr) return '--:--';
         if (timeStr.includes('T')) {
-            return new Date(timeStr).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            return new Date(timeStr).toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' });
         }
         return timeStr.slice(0, 5); // HH:MM:SS → HH:MM
     } catch {
@@ -21,42 +21,57 @@ function formatTime(timeStr: string) {
     }
 }
 
+const DICT = {
+    loadingText: { ar: 'جاري تحميل بيانات الحجز…', en: 'Loading booking details…' },
+    title: { ar: 'وسيلة الدفع', en: 'Payment Method' },
+    bookingNum: { ar: 'رقم الحجز:', en: 'Booking #:' },
+    selected: { ar: 'محدد', en: 'Selected' },
+    totalRequired: { ar: 'المبلغ المطلوب تحويله', en: 'Amount Required to Transfer' },
+    nextStep: { ar: 'الانتقال لرفع الإيصال', en: 'Proceed to Upload Receipt' },
+    currency: { ar: 'ج.م', en: 'EGP' },
+    methods: {
+        [PaymentMethod.VodafoneCash]: { ar: 'فودافون كاش', en: 'Vodafone Cash' },
+        [PaymentMethod.InstaPay]: { ar: 'إنستا باي', en: 'InstaPay' }
+    },
+    hints: {
+        [PaymentMethod.VodafoneCash]: { ar: 'يرجى تحويل المبلغ إلى رقم فودافون كاش التالي', en: 'Please transfer the amount to the following Vodafone Cash number' },
+        [PaymentMethod.InstaPay]: { ar: 'يرجى التحويل إلى عنوان إنستا باي التالي', en: 'Please transfer to the following InstaPay address' }
+    }
+} as const;
+
 const WALLET_INFO: Record<
     PaymentMethod,
-    { icon: string; iconColor: string; label: string; value: string; hint: string }
+    { icon: string; iconColor: string; value: string }
 > = {
     [PaymentMethod.VodafoneCash]: {
         icon: 'phone_android',
         iconColor: 'text-red-500',
-        label: 'فودافون كاش',
         value: '01012345678',
-        hint: 'يرجى تحويل المبلغ إلى رقم فودافون كاش التالي',
     },
     [PaymentMethod.InstaPay]: {
         icon: 'send_money',
         iconColor: 'text-blue-500',
-        label: 'إنستا باي',
         value: 'hagzaya@instapay',
-        hint: 'يرجى التحويل إلى عنوان إنستا باي التالي',
     },
 };
 
 export function PaymentMethodsPage({ onNext, onBack }: PaymentMethodsPageProps) {
     const { state, updateState } = useBookingFlow();
+    const { lang, dir } = useLanguage();
+    const isAr = lang === 'ar';
+    const d = (key: keyof typeof DICT) => DICT[key][lang];
+
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
         state.paymentMethod ?? PaymentMethod.VodafoneCash
     );
 
-    // ── Loading guard — shows a brief spinner instead of crashing ─────────────
-    // bookingId is written by TimeSlotsPage before onNext() fires, but React
-    // context flushes asynchronously. The spinner resolves on the very next tick.
     if (state.bookingId == null) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 gap-3" dir="rtl">
+            <div className="flex flex-col items-center justify-center py-20 gap-3" dir={dir}>
                 <span className="material-symbols-outlined animate-spin text-3xl text-[#006b20]">
                     progress_activity
                 </span>
-                <p className="text-xs text-[#3e4a3c] font-semibold">جاري تحميل بيانات الحجز…</p>
+                <p className="text-xs text-[#3e4a3c] font-semibold">{d('loadingText')}</p>
             </div>
         );
     }
@@ -68,8 +83,12 @@ export function PaymentMethodsPage({ onNext, onBack }: PaymentMethodsPageProps) 
         onNext();
     };
 
+    const formattedAmount = new Intl.NumberFormat(isAr ? 'ar-EG' : 'en-US', {
+        minimumFractionDigits: 0
+    }).format(state.totalAmount || 0);
+
     return (
-        <div className="bg-[#f6f8f7] pb-6 font-ar" dir="rtl">
+        <div className={`bg-[#f6f8f7] pb-6 ${isAr ? 'font-ar' : 'font-en'}`} dir={dir}>
             <div className="max-w-2xl mx-auto px-2 pt-4 space-y-6">
                 <BookingStepper current={3} />
 
@@ -81,15 +100,17 @@ export function PaymentMethodsPage({ onNext, onBack }: PaymentMethodsPageProps) 
                             className="w-9 h-9 rounded-lg bg-white border border-[#e1e3e1] flex items-center justify-center hover:bg-[#f0f2f0] transition-colors shrink-0"
                             aria-label="رجوع"
                         >
-                            <span className="material-symbols-outlined text-[#3e4a3c] text-base">arrow_forward</span>
+                            <span className="material-symbols-outlined text-[#3e4a3c] text-base">
+                                {isAr ? 'arrow_forward' : 'arrow_back'}
+                            </span>
                         </button>
                         <div>
-                            <h1 className="font-extrabold text-lg text-[#191c1c]">وسيلة الدفع</h1>
+                            <h1 className="font-extrabold text-lg text-[#191c1c]">{d('title')}</h1>
                             {state.slot && (
                                 <p className="text-xs text-[#3e4a3c]">
-                                    {formatTime(state.slot.startTime)} — {formatTime(state.slot.endTime)}
+                                    {formatTime(state.slot.startTime, lang)} — {formatTime(state.slot.endTime, lang)}
                                     {state.totalAmount != null && (
-                                        <span className="font-black text-[#006b20]"> · EGP {state.totalAmount}</span>
+                                        <span className="font-black text-[#006b20]" dir="ltr"> · {formattedAmount} {d('currency')}</span>
                                     )}
                                 </p>
                             )}
@@ -99,7 +120,7 @@ export function PaymentMethodsPage({ onNext, onBack }: PaymentMethodsPageProps) 
                     {/* Booking reference pill */}
                     <div className="flex items-center gap-1.5 bg-[#f0f2f0] rounded-lg px-3 py-2 w-fit text-[10px] font-bold text-[#3e4a3c]">
                         <span className="material-symbols-outlined text-xs">receipt_long</span>
-                        <span>رقم الحجز: <span className="text-[#006b20]">#{state.bookingId}</span></span>
+                        <span>{d('bookingNum')} <span className="text-[#006b20]">#{state.bookingId}</span></span>
                     </div>
 
                     {/* Payment method picker */}
@@ -121,11 +142,11 @@ export function PaymentMethodsPage({ onNext, onBack }: PaymentMethodsPageProps) 
                                         {info.icon}
                                     </span>
                                     <p className="text-xs font-black text-[#191c1c]">
-                                        {PAYMENT_METHOD_LABELS[method]}
+                                        {DICT.methods[method][lang]}
                                     </p>
                                     {isActive && (
                                         <span className="text-[10px] bg-[#006b20] text-white px-2 py-0.5 rounded-full font-bold">
-                                            محدد
+                                            {d('selected')}
                                         </span>
                                     )}
                                 </button>
@@ -137,8 +158,8 @@ export function PaymentMethodsPage({ onNext, onBack }: PaymentMethodsPageProps) 
                     <div className="bg-[#e8f5e9]/50 border border-[#006b20]/20 rounded-xl p-4 flex items-start gap-2.5">
                         <span className="material-symbols-outlined text-[#006b20] text-base shrink-0 mt-0.5">info</span>
                         <div className="text-xs font-bold text-[#006b20] leading-relaxed">
-                            <p className="mb-1">{wallet.hint}:</p>
-                            <span className="bg-[#006b20] text-white px-3 py-1 rounded-lg font-black inline-block tracking-wide">
+                            <p className="mb-1">{DICT.hints[paymentMethod][lang]}:</p>
+                            <span className="bg-[#006b20] text-white px-3 py-1 rounded-lg font-black inline-block tracking-wide" dir="ltr">
                                 {wallet.value}
                             </span>
                         </div>
@@ -147,9 +168,9 @@ export function PaymentMethodsPage({ onNext, onBack }: PaymentMethodsPageProps) 
                     {/* Amount summary */}
                     {state.totalAmount != null && (
                         <div className="bg-[#f0f2f0] rounded-xl p-4 space-y-2 text-xs font-bold text-[#3e4a3c]">
-                            <div className="flex justify-between">
-                                <span>المبلغ المطلوب تحويله</span>
-                                <span className="text-[#006b20] text-sm font-black">EGP {state.totalAmount}</span>
+                            <div className="flex justify-between items-center">
+                                <span>{d('totalRequired')}</span>
+                                <span className="text-[#006b20] text-sm font-black" dir="ltr">{formattedAmount} {d('currency')}</span>
                             </div>
                         </div>
                     )}
@@ -158,8 +179,10 @@ export function PaymentMethodsPage({ onNext, onBack }: PaymentMethodsPageProps) 
                         onClick={handleNext}
                         className="w-full bg-[#006b20] hover:bg-[#005318] text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-sm flex items-center justify-center gap-2"
                     >
-                        <span>الانتقال لرفع الإيصال</span>
-                        <span className="material-symbols-outlined text-lg">arrow_back</span>
+                        <span>{d('nextStep')}</span>
+                        <span className="material-symbols-outlined text-lg">
+                            {isAr ? 'arrow_back' : 'arrow_forward'}
+                        </span>
                     </button>
                 </div>
             </div>

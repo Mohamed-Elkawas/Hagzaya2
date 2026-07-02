@@ -4,6 +4,7 @@ import { BookingStepper } from '../components/BookingStepper';
 import type { Slot } from '../types/booking.types';
 import { useBookingFlow } from '../hooks/useBookingFlow';
 import { PaymentMethod } from '../types/Booking.enums';
+import { useLanguage } from '../../../core/context/LanguageContext';
 
 interface TimeSlotsPageProps {
     onNext: () => void;
@@ -11,11 +12,11 @@ interface TimeSlotsPageProps {
     fieldId: number;
 }
 
-function formatTime(timeStr: string) {
+function formatTime(timeStr: string, lang: 'ar' | 'en') {
     try {
         if (!timeStr) return '--:--';
         if (timeStr.includes('T')) {
-            return new Date(timeStr).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            return new Date(timeStr).toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' });
         }
         // HH:MM:SS → HH:MM
         return timeStr.slice(0, 5);
@@ -24,10 +25,10 @@ function formatTime(timeStr: string) {
     }
 }
 
-function formatDisplayDate(dateStr: string) {
+function formatDisplayDate(dateStr: string, lang: 'ar' | 'en') {
     if (!dateStr) return '--';
     try {
-        return new Date(dateStr + 'T00:00:00').toLocaleDateString('ar-EG', {
+        return new Date(dateStr + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
@@ -38,8 +39,26 @@ function formatDisplayDate(dateStr: string) {
     }
 }
 
+const DICT = {
+    title: { ar: 'اختر الفترة', en: 'Select Slot' },
+    loadError: { ar: 'تعذر تحميل الفترات المتاحة.', en: 'Failed to load available slots.' },
+    noSlots: { ar: 'لا توجد فترات متاحة لهذا اليوم', en: 'No available slots for this day.' },
+    booked: { ar: 'محجوز', en: 'Booked' },
+    confirming: { ar: 'جاري تأكيد الحجز…', en: 'Confirming booking…' },
+    confirmBtn: { ar: 'تأكيد الفترة والانتقال للدفع', en: 'Confirm slot & go to payment' },
+    currency: { ar: 'ج.م', en: 'EGP' },
+    genericError: {
+        ar: 'تعذر تأكيد الفترة، قد تكون محجوزة بالفعل أو انتهت جلسة الدخول. يرجى إعادة المحاولة.',
+        en: 'Could not confirm slot. It might be already booked or session expired. Please try again.'
+    }
+} as const;
+
 export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
     const { state, updateState } = useBookingFlow();
+    const { lang, dir } = useLanguage();
+    const isAr = lang === 'ar';
+    const d = (key: keyof typeof DICT) => DICT[key][lang];
+
     const date = state.date ?? '';
 
     const [slots, setSlots] = useState<Slot[]>([]);
@@ -49,9 +68,6 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
     const [confirming, setConfirming] = useState(false);
     const [confirmError, setConfirmError] = useState<string | null>(null);
 
-    // ── Safety net: advance the wizard AFTER context confirms the write ───────
-    // Using a version counter guarantees the useEffect always fires even if
-    // the bookingId didn't change (e.g. same slot rebooked after cancellation).
     const [advanceVersion, setAdvanceVersion] = useState(0);
     const shouldAdvanceRef = useRef(false);
 
@@ -61,7 +77,7 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
             shouldAdvanceRef.current = false;
             onNext();
         }
-    }, [advanceVersion]); // onNext intentionally omitted — stable callback from parent
+    }, [advanceVersion]);
 
     const lastFetchedKey = useRef<string>('');
 
@@ -82,10 +98,10 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
             .then(setSlots)
             .catch((err) => {
                 console.error(err);
-                setSlotsError('تعذر تحميل الفترات المتاحة.');
+                setSlotsError(d('loadError'));
             })
             .finally(() => setSlotsLoading(false));
-    }, [fieldId, date, onBack]);
+    }, [fieldId, date, onBack, lang]);
 
     const handleConfirmSlot = async () => {
         if (!selectedSlot || !fieldId) return;
@@ -99,13 +115,9 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
                 usePoints: false,
             });
 
-            // ✅ PRIMARY FIX: API returns "id" and "finalPrice", NOT "bookingId"/"totalAmount"
             const bookingId = result.id;
             const totalAmount = result.finalPrice ?? result.totalPrice ?? selectedSlot.price;
 
-            // Write to context first, then signal the advance via version bump.
-            // React 18 batches both setState calls together, so PaymentMethodsPage
-            // will receive the populated context on its very first render.
             updateState({
                 slot: selectedSlot,
                 bookingId,
@@ -113,15 +125,11 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
                 fieldId: Number(fieldId),
             });
             shouldAdvanceRef.current = true;
-            setAdvanceVersion((v) => v + 1); // triggers the useEffect safety net above
+            setAdvanceVersion((v) => v + 1);
         } catch (err: any) {
             console.error('Booking creation failed:', err);
-            setConfirmError(
-                err.message ||
-                'تعذر تأكيد الفترة، قد تكون محجوزة بالفعل أو انتهت جلسة الدخول. يرجى إعادة المحاولة.'
-            );
+            setConfirmError(err.message || d('genericError'));
             shouldAdvanceRef.current = false;
-            // Refresh slots so the user sees updated availability
             lastFetchedKey.current = '';
             bookingApi
                 .getAvailableSlots(Number(fieldId), date)
@@ -133,7 +141,7 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
     };
 
     return (
-        <div className="bg-[#f6f8f7] pb-6 font-ar" dir="rtl">
+        <div className={`bg-[#f6f8f7] pb-6 ${isAr ? 'font-ar' : 'font-en'}`} dir={dir}>
             <div className="max-w-2xl mx-auto px-2 pt-4 space-y-6">
                 <BookingStepper current={2} />
 
@@ -144,11 +152,13 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
                             className="w-9 h-9 rounded-lg bg-white border border-[#e1e3e1] flex items-center justify-center hover:bg-[#f0f2f0] transition-colors shrink-0"
                             aria-label="رجوع"
                         >
-                            <span className="material-symbols-outlined text-[#3e4a3c] text-base">arrow_forward</span>
+                            <span className="material-symbols-outlined text-[#3e4a3c] text-base">
+                                {isAr ? 'arrow_forward' : 'arrow_back'}
+                            </span>
                         </button>
                         <div>
-                            <h1 className="font-extrabold text-lg text-[#191c1c]">اختر الفترة</h1>
-                            <p className="text-xs text-[#3e4a3c]">{formatDisplayDate(date)}</p>
+                            <h1 className="font-extrabold text-lg text-[#191c1c]">{d('title')}</h1>
+                            <p className="text-xs text-[#3e4a3c]">{formatDisplayDate(date, lang)}</p>
                         </div>
                     </div>
 
@@ -167,7 +177,7 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
                             <span className="material-symbols-outlined text-3xl text-[#3e4a3c]/30 mb-2">
                                 event_busy
                             </span>
-                            <p className="text-xs font-bold text-[#3e4a3c]/50">لا توجد فترات متاحة لهذا اليوم</p>
+                            <p className="text-xs font-bold text-[#3e4a3c]/50">{d('noSlots')}</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -175,6 +185,11 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
                                 const isSlotAvailable =
                                     slot.status === 'Available' ||
                                     String(slot.status).toLowerCase() === 'available';
+                                
+                                const formattedPrice = new Intl.NumberFormat(isAr ? 'ar-EG' : 'en-US', {
+                                    minimumFractionDigits: 0
+                                }).format(slot.price);
+
                                 return (
                                     <button
                                         key={slot.id}
@@ -190,16 +205,18 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
                                     >
                                         <div className="flex items-center justify-center gap-1 mb-1">
                                             <span className="material-symbols-outlined text-sm">schedule</span>
-                                            <span>{formatTime(slot.startTime)}</span>
+                                            <span dir="ltr">{formatTime(slot.startTime, lang)}</span>
                                         </div>
-                                        <div className="text-[10px] font-semibold opacity-60">
-                                            {formatTime(slot.endTime)}
+                                        <div className="text-[10px] font-semibold opacity-60" dir="ltr">
+                                            {formatTime(slot.endTime, lang)}
                                         </div>
                                         {isSlotAvailable ? (
-                                            <div className="text-[#006b20] mt-1">EGP {slot.price}</div>
+                                            <div className="text-[#006b20] mt-1" dir="ltr">
+                                                {formattedPrice} {d('currency')}
+                                            </div>
                                         ) : (
                                             <span className="inline-block mt-1 bg-[#3e4a3c]/10 text-[#3e4a3c]/50 text-[10px] px-2 py-0.5 rounded-full">
-                                                محجوز
+                                                {d('booked')}
                                             </span>
                                         )}
                                     </button>
@@ -214,13 +231,14 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
                         </div>
                     )}
 
-                    {/* Selected slot summary */}
                     {selectedSlot && !confirming && (
                         <div className="bg-[#e8f5e9]/50 border border-[#006b20]/20 rounded-xl p-3 flex items-center justify-between text-xs font-bold text-[#3e4a3c]">
-                            <span>
-                                {formatTime(selectedSlot.startTime)} — {formatTime(selectedSlot.endTime)}
+                            <span dir="ltr">
+                                {formatTime(selectedSlot.startTime, lang)} — {formatTime(selectedSlot.endTime, lang)}
                             </span>
-                            <span className="text-[#006b20] font-black">EGP {selectedSlot.price}</span>
+                            <span className="text-[#006b20] font-black" dir="ltr">
+                                {new Intl.NumberFormat(isAr ? 'ar-EG' : 'en-US', { minimumFractionDigits: 0 }).format(selectedSlot.price)} {d('currency')}
+                            </span>
                         </div>
                     )}
 
@@ -234,12 +252,14 @@ export function TimeSlotsPage({ onNext, onBack, fieldId }: TimeSlotsPageProps) {
                                 <span className="material-symbols-outlined animate-spin text-lg">
                                     progress_activity
                                 </span>
-                                <span>جاري تأكيد الحجز…</span>
+                                <span>{d('confirming')}</span>
                             </>
                         ) : (
                             <>
-                                <span>تأكيد الفترة والانتقال للدفع</span>
-                                <span className="material-symbols-outlined text-lg">arrow_back</span>
+                                <span>{d('confirmBtn')}</span>
+                                <span className="material-symbols-outlined text-lg">
+                                    {isAr ? 'arrow_back' : 'arrow_forward'}
+                                </span>
                             </>
                         )}
                     </button>

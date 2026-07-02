@@ -84,6 +84,30 @@ async function put<T>(path: string, body?: unknown): Promise<T> {
     return handleResponse<T>(response, url);
 }
 
+async function putRaw(path: string, body?: unknown): Promise<void> {
+    const url = `${BASE_URL}${path}`;
+    const response = await fetch(url, {
+        method: 'PUT',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    
+    if (!response.ok) {
+        const text = await response.text();
+        let msg = `[${response.status}] ${url}`;
+        try {
+            const j = JSON.parse(text);
+            msg += ` — ${j.message ?? j.title ?? text.slice(0, 120)}`;
+        } catch { 
+            msg += ` — ${text.slice(0, 120)}`;
+        }
+        throw new Error(msg);
+    }
+    
+    // Read the stream to flush it, but don't attempt to JSON.parse it
+    await response.text().catch(() => {});
+}
+
 async function del<T>(path: string): Promise<T> {
     const url = `${BASE_URL}${path}`;
     const response = await fetch(url, { method: 'DELETE', headers: authHeaders() });
@@ -112,6 +136,27 @@ export const playerApi = {
         return put('/api/players/me', request);
     },
 
+    /** PUT /api/players/me/photo */
+    uploadPhoto(file: File): Promise<PlayerProfileResponse> {
+        const url = `${BASE_URL}/api/players/me/photo`;
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        const token =
+            localStorage.getItem('hagzaya_token') ??
+            localStorage.getItem('accessToken') ??
+            '';
+
+        return fetch(url, {
+            method: 'PUT',
+            headers: {
+                'ngrok-skip-browser-warning': 'true',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: formData,
+        }).then((res) => handleResponse<PlayerProfileResponse>(res, url));
+    },
+
     /** DELETE /api/players/me */
     deleteAccount(): Promise<void> {
         return del('/api/players/me');
@@ -133,12 +178,12 @@ export const playerApi = {
 
     /** PUT /api/players/me/notifications/{notificationId}/read */
     markAsRead(notificationId: number): Promise<void> {
-        return put(`/api/players/me/notifications/${notificationId}/read`);
+        return putRaw(`/api/players/me/notifications/${notificationId}/read`);
     },
 
     /** PUT /api/players/me/notifications/read-all */
     markAllAsRead(): Promise<void> {
-        return put('/api/players/me/notifications/read-all');
+        return putRaw('/api/players/me/notifications/read-all');
     },
 
     // ── Notification Settings ─────────────────────────────────────────────────

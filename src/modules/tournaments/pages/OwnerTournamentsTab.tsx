@@ -5,11 +5,12 @@ import type { Tournament } from '../types/tournament';
 import { TournamentStatus } from '../types/tournament';
 import { toast } from 'sonner';
 import {
-    LayoutDashboard, Activity, CalendarDays, Trophy,
-    BadgeDollarSign, FileText, Settings, LogOut, Plus, RefreshCw
+    Activity, LayoutDashboard, CalendarDays, Trophy, FileText, Settings, LogOut, CheckCircle2, ChevronLeft, Plus, Clock, Users, ArrowUpRight, ArrowDownRight, BadgeDollarSign, RefreshCw
 } from 'lucide-react';
+import { useLanguage } from '../../../core/context/LanguageContext';
 
 export function OwnerTournamentsTab() {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const location = useLocation();
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -34,14 +35,14 @@ export function OwnerTournamentsTab() {
     }, []);
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('هل أنت متأكد من حذف هذه البطولة نهائياً؟')) return;
+        if (!window.confirm(t('owner.tournaments.delete.confirm'))) return;
         setDeletingIds(prev => [...prev, id]);
         try {
             await tournamentsApi.delete(id);
             setTournaments(prev => prev.filter(t => t.id !== id));
-            toast.success('تم حذف البطولة بنجاح');
+            toast.success(t('owner.tournaments.delete.success'));
         } catch (err) {
-            toast.error('فشل حذف البطولة. تأكد من صلاحياتك كمسؤول.');
+            toast.error(t('owner.tournaments.delete.error'));
         } finally {
             setDeletingIds(prev => prev.filter(delId => delId !== id));
         }
@@ -54,85 +55,38 @@ export function OwnerTournamentsTab() {
     const expectedRevenue = tournaments.reduce((acc, t) => acc + (t.registeredTeamsCount * t.price), 0);
 
     const kpis = [
-        { label: 'إجمالي البطولات', value: totalTournaments, icon: Trophy },
-        { label: 'بطولات نشطة', value: activeTournaments, icon: Activity },
-        { label: 'الفرق المسجلة', value: totalTeams, icon: CalendarDays },
-        { label: 'إجمالي الإيرادات المتوقعة', value: `${expectedRevenue} ج.م`, icon: BadgeDollarSign },
+        { label: t('owner.tournaments.kpi.total'), value: totalTournaments, icon: Trophy },
+        { label: t('owner.tournaments.kpi.active'), value: activeTournaments, icon: Activity },
+        { label: t('owner.tournaments.kpi.teams'), value: totalTeams, icon: CalendarDays },
+        { label: t('owner.tournaments.kpi.revenue'), value: `${expectedRevenue} ${t('currency.egp')}`, icon: BadgeDollarSign },
     ];
 
     const getStatusBadge = (status: TournamentStatus) => {
         switch (status) {
             case TournamentStatus.Upcoming:
-                return <span className="bg-emerald-50 text-emerald-700 text-[10px] px-2 py-1 rounded-full font-bold border border-emerald-200">متاحة للتسجيل</span>;
+                return <span className="bg-emerald-50 text-emerald-700 text-[10px] px-2 py-1 rounded-full font-bold border border-emerald-200">{t('owner.tournaments.status.upcoming')}</span>;
             case TournamentStatus.Ongoing:
-                return <span className="bg-red-50 text-red-600 text-[10px] px-2 py-1 rounded-full font-bold border border-red-200 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> جارية</span>;
+                return <span className="bg-red-50 text-red-600 text-[10px] px-2 py-1 rounded-full font-bold border border-red-200 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" /> {t('owner.tournaments.status.ongoing')}</span>;
             case TournamentStatus.Finished:
-                return <span className="bg-slate-50 text-slate-600 text-[10px] px-2 py-1 rounded-full font-bold border border-slate-200">منتهية</span>;
+                return <span className="bg-slate-50 text-slate-600 text-[10px] px-2 py-1 rounded-full font-bold border border-slate-200">{t('owner.tournaments.status.finished')}</span>;
             default:
                 return <span className="bg-amber-50 text-amber-700 text-[10px] px-2 py-1 rounded-full font-bold border border-amber-200">{status}</span>;
         }
     };
 
-    const navigation = [
-        { name: 'لوحة البيانات', icon: LayoutDashboard, path: '/owner/dashboard' },
-        { name: 'إدارة ملاعبي', icon: Activity, path: '/owner/fields' },
-        { name: 'طلبات الحجز', icon: CalendarDays, path: '/owner/bookings' },
-        { name: 'البطولات', icon: Trophy, path: '/owner/tournaments' },
-        { name: 'مدفوعات البطولات', icon: BadgeDollarSign, path: '/owner/tournaments/payments' },
-        { name: 'التقارير', icon: FileText, path: '/owner/reports' },
-        { name: 'الإعدادات', icon: Settings, path: '/owner/settings' },
-    ];
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans flex" dir="rtl">
-            {/* Sidebar */}
-            <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto">
-                <div className="p-6 border-b border-slate-800">
-                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                        <span className="text-indigo-400">Hagzaya</span> Owner
-                    </h2>
-                </div>
-                <nav className="flex-1 p-4 space-y-1 mt-4">
-                    {navigation.map((item) => {
-                        const isActive = location.pathname === item.path;
-                        return (
-                            <button
-                                key={item.name}
-                                onClick={() => navigate(item.path)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm ${
-                                    isActive
-                                        ? 'bg-indigo-600 text-white font-bold shadow-md'
-                                        : 'text-slate-400 hover:bg-slate-800 hover:text-white font-semibold'
-                                }`}
-                            >
-                                <item.icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} />
-                                <span>{item.name}</span>
-                            </button>
-                        );
-                    })}
-                </nav>
-                <div className="p-4 border-t border-slate-800">
-                    <button
-                        onClick={() => { localStorage.removeItem('hagzaya_token'); navigate('/login'); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 font-semibold transition-all text-sm"
-                    >
-                        <LogOut size={18} />
-                        <span>تسجيل الخروج</span>
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 overflow-x-hidden">
-                <header className="bg-white border-b border-slate-200 px-8 py-6">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-slate-50 font-sans p-4 md:p-8">
+            {/* Header */}
+            <header className="bg-white border-b border-slate-200 px-8 py-6 rounded-2xl mb-8">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
                                 <Trophy className="w-6 h-6 text-indigo-600" />
-                                إدارة البطولات
+                                {t('owner.tournaments.title')}
                             </h1>
                             <p className="text-sm font-medium text-slate-500 mt-1">
-                                نظم وأدر بطولات ملعبك، تتبع التسجيلات، وأدِر المباريات من مكان واحد
+                                {t('owner.tournaments.subtitle')}
                             </p>
                         </div>
                         <button
@@ -140,7 +94,7 @@ export function OwnerTournamentsTab() {
                             className="shrink-0 bg-primary hover:bg-primary/90 text-white px-5 h-11 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm active:scale-[0.98]"
                         >
                             <Plus size={16} />
-                            <span>إنشاء بطولة جديدة</span>
+                            <span>{t('owner.tournaments.createNew')}</span>
                         </button>
                     </div>
                 </header>
@@ -169,7 +123,7 @@ export function OwnerTournamentsTab() {
                     {/* Tournaments Data Table */}
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
-                            <h3 className="text-sm font-black text-slate-900">البطولات الحالية</h3>
+                            <h3 className="text-sm font-black text-slate-900">{t('owner.tournaments.current')}</h3>
                             <button onClick={fetchTournaments} className="text-slate-500 hover:text-primary transition-colors p-1">
                                 <RefreshCw size={18} />
                             </button>
@@ -184,70 +138,70 @@ export function OwnerTournamentsTab() {
                                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3 text-slate-500">
                                     <Trophy size={28} />
                                 </div>
-                                <p className="text-sm font-bold text-slate-900">لا توجد بطولات بعد</p>
-                                <p className="text-xs mt-1">قم بإنشاء بطولتك الأولى لجذب فرق جديدة لملعبك.</p>
+                                <p className="text-sm font-bold text-slate-900">{t('owner.tournaments.empty.title')}</p>
+                                <p className="text-xs mt-1">{t('owner.tournaments.empty.subtitle2')}</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-right border-collapse text-xs font-medium text-slate-900 whitespace-nowrap">
                                     <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                                         <tr>
-                                            <th className="p-4">اسم البطولة</th>
-                                            <th className="p-4">النوع</th>
-                                            <th className="p-4">الفرق (مسجل/متاح)</th>
-                                            <th className="p-4">تاريخ البداية</th>
-                                            <th className="p-4">الحالة</th>
-                                            <th className="p-4 text-center">الإجراءات</th>
+                                            <th className="p-4">{t('owner.tournaments.col.name')}</th>
+                                            <th className="p-4">{t('owner.tournaments.col.type')}</th>
+                                            <th className="p-4">{t('owner.tournaments.col.teamsInfo')}</th>
+                                            <th className="p-4">{t('owner.tournaments.col.startDate')}</th>
+                                            <th className="p-4">{t('owner.tournaments.col.status')}</th>
+                                            <th className="p-4 text-center">{t('owner.tournaments.col.actions')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {tournaments.map((t) => (
-                                            <tr key={t.id} className="hover:bg-slate-50/80 transition-colors">
+                                        {tournaments.map((tournament) => (
+                                            <tr key={tournament.id} className="hover:bg-slate-50/80 transition-colors">
                                                 <td className="p-4">
-                                                    <div className="font-bold text-sm text-primary">{t.name}</div>
-                                                    <div className="text-[10px] text-slate-500 mt-0.5 max-w-50 truncate">{t.description}</div>
+                                                    <div className="font-bold text-sm text-primary">{tournament.name}</div>
+                                                    <div className="text-[10px] text-slate-500 mt-0.5 max-w-50 truncate">{tournament.description}</div>
                                                 </td>
-                                                <td className="p-4 font-semibold">{t.type}</td>
+                                                <td className="p-4 font-semibold">{tournament.type}</td>
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-full max-w-20 bg-slate-100 h-2 rounded-full overflow-hidden shrink-0">
                                                             <div
                                                                 className="h-full bg-primary rounded-full"
-                                                                style={{ width: `${(t.registeredTeamsCount / t.numberOfTeams) * 100}%` }}
+                                                                style={{ width: `${(tournament.registeredTeamsCount / tournament.numberOfTeams) * 100}%` }}
                                                             />
                                                         </div>
-                                                        <span className="font-bold">{t.registeredTeamsCount}/{t.numberOfTeams}</span>
+                                                        <span className="font-bold">{tournament.registeredTeamsCount}/{tournament.numberOfTeams}</span>
                                                     </div>
                                                 </td>
-                                                <td className="p-4 font-semibold">{new Date(t.startDate).toLocaleDateString('ar-EG')}</td>
-                                                <td className="p-4">{getStatusBadge(t.status)}</td>
+                                                <td className="p-4 font-semibold">{new Date(tournament.startDate).toLocaleDateString('ar-EG')}</td>
+                                                <td className="p-4">{getStatusBadge(tournament.status)}</td>
                                                 <td className="p-4">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <button
-                                                            onClick={() => navigate(`/tournaments/${t.id}`)}
+                                                            onClick={() => navigate(`/tournaments/${tournament.id}`)}
                                                             className="px-3 py-1.5 text-[11px] font-bold border border-slate-200 rounded-lg hover:border-primary hover:text-primary bg-white transition-colors flex items-center gap-1"
                                                         >
                                                             <FileText size={14} />
-                                                            إدارة
+                                                            {t('owner.tournaments.action.manage')}
                                                         </button>
                                                         <button
-                                                            onClick={() => navigate(`/tournaments/edit/${t.id}`)}
+                                                            onClick={() => navigate(`/tournaments/edit/${tournament.id}`)}
                                                             className="px-3 py-1.5 text-[11px] font-bold border border-slate-200 rounded-lg hover:border-primary hover:text-primary bg-white transition-colors flex items-center gap-1"
                                                         >
                                                             <Settings size={14} />
-                                                            تعديل
+                                                            {t('owner.tournaments.action.edit')}
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDelete(t.id)}
-                                                            disabled={deletingIds.includes(t.id)}
+                                                            onClick={() => handleDelete(tournament.id)}
+                                                            disabled={deletingIds.includes(tournament.id)}
                                                             className="px-3 py-1.5 text-[11px] font-bold border border-transparent bg-rose-50 text-rose-700 rounded-lg hover:bg-rose-100 transition-colors flex items-center gap-1 disabled:opacity-50"
                                                         >
-                                                            {deletingIds.includes(t.id) ? (
+                                                            {deletingIds.includes(tournament.id) ? (
                                                                 <RefreshCw size={14} className="animate-spin" />
                                                             ) : (
                                                                 <LogOut size={14} className="rotate-180" />
                                                             )}
-                                                            حذف
+                                                            {t('owner.tournaments.action.delete')}
                                                         </button>
                                                     </div>
                                                 </td>
@@ -259,7 +213,6 @@ export function OwnerTournamentsTab() {
                         )}
                     </div>
                 </div>
-            </main>
         </div>
     );
 }

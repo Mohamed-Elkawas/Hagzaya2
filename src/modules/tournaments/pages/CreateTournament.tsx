@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { tournamentsApi } from '../api/api';
 import { fieldsApi } from '../../fields/api/fields.api';
+import { useLanguage } from '../../../core/context/LanguageContext';
 import type { Field } from '../../fields/types/fields.types';
 import type { CreateTournamentPayload } from '../types/tournament';
 
@@ -52,10 +53,10 @@ interface FormData {
   fieldId: string;
 }
 
-const TOURNAMENT_TYPES = [
-  { value: 'FiveASide', label: 'كرة 5 (خماسي)', icon: '⚽' },
-  { value: 'SevenASide', label: 'كرة 7 (سباعي)', icon: '🏟️' },
-  { value: 'ElevenASide', label: 'كرة 11 (مفتوح)', icon: '🏆' },
+const getTournamentTypes = (d: any) => [
+  { value: 'FiveASide', label: d.type5, icon: '⚽' },
+  { value: 'SevenASide', label: d.type7, icon: '🏟️' },
+  { value: 'ElevenASide', label: d.type11, icon: '🏆' },
 ];
 
 const TEAM_COUNTS: (8 | 16 | 32)[] = [8, 16, 32];
@@ -83,25 +84,25 @@ function parseOwnerIdFromToken(): number | null {
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
-function validate(data: FormData): FormErrors {
+function validate(data: FormData, d: typeof DICT['ar']): FormErrors {
   const errors: FormErrors = {};
   if (!data.name.trim() || data.name.length < 3) {
-    errors.name = 'اسم البطولة يجب أن يكون 3 أحرف على الأقل';
+    errors.name = d.errName;
   }
-  if (!data.prize.trim()) errors.prize = 'الجائزة مطلوبة';
+  if (!data.prize.trim()) errors.prize = d.errPrize;
   if (!data.description.trim() || data.description.length < 10) {
-    errors.description = 'الوصف يجب أن يكون 10 أحرف على الأقل';
+    errors.description = d.errDesc;
   }
   if (!data.price || isNaN(Number(data.price)) || Number(data.price) < 0) {
-    errors.price = 'أدخل رسوم تسجيل صحيحة';
+    errors.price = d.errPrice;
   }
-  if (!data.type) errors.type = 'اختر نوع البطولة';
-  if (!data.startDate) errors.startDate = 'تاريخ البداية مطلوب';
-  if (!data.endDate) errors.endDate = 'تاريخ النهاية مطلوب';
+  if (!data.type) errors.type = d.errType;
+  if (!data.startDate) errors.startDate = d.errStartDate;
+  if (!data.endDate) errors.endDate = d.errEndDate;
   if (data.startDate && data.endDate && data.startDate >= data.endDate) {
-    errors.endDate = 'تاريخ النهاية يجب أن يكون بعد البداية';
+    errors.endDate = d.errEndDateAfter;
   }
-  if (!data.fieldId.trim()) errors.fieldId = 'معرّف الملعب مطلوب';
+  if (!data.fieldId.trim()) errors.fieldId = d.errFieldId;
   return errors;
 }
 
@@ -163,7 +164,141 @@ function FormField({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
+
+// ─── Local Dictionary ────────────────────────────────────────────────────────
+const DICT = {
+  ar: {
+    type5: 'كرة 5 (خماسي)',
+    type7: 'كرة 7 (سباعي)',
+    type11: 'كرة 11 (مفتوح)',
+    errName: 'اسم البطولة يجب أن يكون 3 أحرف على الأقل',
+    errPrize: 'الجائزة مطلوبة',
+    errDesc: 'الوصف يجب أن يكون 10 أحرف على الأقل',
+    errPrice: 'أدخل رسوم تسجيل صحيحة',
+    errType: 'اختر نوع البطولة',
+    errStartDate: 'تاريخ البداية مطلوب',
+    errEndDate: 'تاريخ النهاية مطلوب',
+    errEndDateAfter: 'تاريخ النهاية يجب أن يكون بعد البداية',
+    errFieldId: 'معرّف الملعب مطلوب',
+    errSubmit: 'حدث خطأ أثناء إنشاء البطولة',
+    successTitle: 'تم إنشاء البطولة! 🎉',
+    successDesc: 'تم إنشاء البطولة "{name}" بنجاح. يمكنك الآن إدارتها وقبول تسجيلات الفرق.',
+    btnView: 'عرض البطولة',
+    btnBack: 'العودة للقائمة',
+    btnBackTop: 'العودة للبطولات',
+    title: 'إنشاء بطولة جديدة',
+    subtitle: 'أنشئ بطولتك واستقبل تسجيلات الفرق',
+    secBasic: 'معلومات البطولة الأساسية',
+    lblName: 'اسم البطولة',
+    plhName: 'مثال: October Weekend League',
+    lblDesc: 'وصف البطولة',
+    hintDesc: 'أضف تفاصيل تساعد الفرق على معرفة طبيعة البطولة',
+    plhDesc: 'اكتب وصفاً شاملاً يحتوي على قواعد البطولة والتفاصيل الهامة...',
+    lblType: 'نوع البطولة',
+    secTeams: 'إعدادات الفرق',
+    lblTeamsCount: 'عدد الفرق المشاركة',
+    teamWord: 'فريق',
+    groupsWord: 'مجموعات',
+    teamsDesc1: 'مع {count} فريق: {groups} مجموعات × 4 فرق',
+    teamsDesc2: '— أعلى فريقين من كل مجموعة يتأهلان للدور الإقصائي',
+    secPrizes: 'الجوائز والرسوم',
+    lblPrize: 'الجائزة الكبرى',
+    plhPrize: 'مثال: EGP 15,000',
+    lblPrice: 'رسوم التسجيل (جنيه)',
+    secDateLoc: 'الموعد والمكان',
+    lblStartDate: 'تاريخ البداية',
+    lblEndDate: 'تاريخ النهاية',
+    secField: 'الملعب',
+    lblField: 'اختر الملعب',
+    hintNoFields: 'لا توجد ملاعب مسجلة — أضف ملعبك أولاً من صفحة الملاعب',
+    loadingFields: 'جار تحميل ملاعبك...',
+    optSelectField: '-- اختر الملعب --',
+    plhFieldId: 'أدخل معرّف الملعب يدوياً...',
+    previewTitle: 'معاينة البطولة',
+    lblPrevName: 'الاسم',
+    lblPrevType: 'النوع',
+    lblPrevTeams: 'عدد الفرق',
+    lblPrevPrize: 'الجائزة',
+    lblPrevPrice: 'الاشتراك',
+    lblPrevField: 'الملعب',
+    valFree: 'مجاناً',
+    valEgp: 'ج.م',
+    valNone: '—',
+    valSelected: 'محدد',
+    valNotSelected: 'غير محدد',
+    btnCreate: 'إنشاء البطولة',
+    btnCreating: 'جاري الإنشاء...',
+    btnCancel: 'إلغاء'
+  },
+  en: {
+    type5: '5-a-side',
+    type7: '7-a-side',
+    type11: '11-a-side',
+    errName: 'Tournament name must be at least 3 characters',
+    errPrize: 'Prize is required',
+    errDesc: 'Description must be at least 10 characters',
+    errPrice: 'Enter valid registration fee',
+    errType: 'Select tournament type',
+    errStartDate: 'Start date is required',
+    errEndDate: 'End date is required',
+    errEndDateAfter: 'End date must be after start date',
+    errFieldId: 'Field ID is required',
+    errSubmit: 'An error occurred while creating tournament',
+    successTitle: 'Tournament Created! 🎉',
+    successDesc: 'Tournament "{name}" created successfully. You can now manage it and accept registrations.',
+    btnView: 'View Tournament',
+    btnBack: 'Back to List',
+    btnBackTop: 'Back to Tournaments',
+    title: 'Create New Tournament',
+    subtitle: 'Create your tournament and accept team registrations',
+    secBasic: 'Basic Tournament Information',
+    lblName: 'Tournament Name',
+    plhName: 'e.g., October Weekend League',
+    lblDesc: 'Tournament Description',
+    hintDesc: 'Add details to help teams understand the tournament',
+    plhDesc: 'Write a comprehensive description with rules and important details...',
+    lblType: 'Tournament Type',
+    secTeams: 'Teams Settings',
+    lblTeamsCount: 'Number of Participating Teams',
+    teamWord: 'Team',
+    groupsWord: 'Groups',
+    teamsDesc1: 'With {count} teams: {groups} groups × 4 teams',
+    teamsDesc2: '— Top two teams from each group qualify to knockouts',
+    secPrizes: 'Prizes & Fees',
+    lblPrize: 'Grand Prize',
+    plhPrize: 'e.g., 15,000 EGP',
+    lblPrice: 'Registration Fee (EGP)',
+    secDateLoc: 'Date & Location',
+    lblStartDate: 'Start Date',
+    lblEndDate: 'End Date',
+    secField: 'Field',
+    lblField: 'Select Field',
+    hintNoFields: 'No registered fields — add your field first from Fields page',
+    loadingFields: 'Loading your fields...',
+    optSelectField: '-- Select Field --',
+    plhFieldId: 'Enter Field ID manually...',
+    previewTitle: 'Tournament Preview',
+    lblPrevName: 'Name',
+    lblPrevType: 'Type',
+    lblPrevTeams: 'Teams',
+    lblPrevPrize: 'Prize',
+    lblPrevPrice: 'Fee',
+    lblPrevField: 'Field',
+    valFree: 'Free',
+    valEgp: 'EGP',
+    valNone: '—',
+    valSelected: 'Selected',
+    valNotSelected: 'Not Selected',
+
+    btnCreate: 'Create Tournament',
+    btnCreating: 'Creating...',
+    btnCancel: 'Cancel'
+  }
+};
+
 export function CreateTournament() {
+    const { lang } = useLanguage();
+    const d = DICT[lang];
   const navigate = useNavigate();
 
   const [form, setForm] = useState<FormData>({
@@ -203,9 +338,9 @@ export function CreateTournament() {
   // Validate on change if field was touched
   useEffect(() => {
     if (touched.size > 0) {
-      setErrors(validate(form));
+      setErrors(validate(form, d));
     }
-  }, [form, touched]);
+  }, [form, touched, d]);
 
   const touch = (field: string) => setTouched((prev) => new Set([...prev, field]));
 
@@ -228,7 +363,7 @@ export function CreateTournament() {
     const allFields = Object.keys(form) as (keyof FormData)[];
     setTouched(new Set(allFields));
 
-    const validationErrors = validate(form);
+    const validationErrors = validate(form, d);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -255,7 +390,7 @@ export function CreateTournament() {
       setIsSuccess(true);
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : 'حدث خطأ أثناء إنشاء البطولة'
+        err instanceof Error ? err.message : d.errSubmit
       );
     } finally {
       setIsSubmitting(false);
@@ -268,16 +403,16 @@ export function CreateTournament() {
     return (
       <div
         className="min-h-screen bg-[#f6f8f7] flex items-center justify-center p-4"
-        dir="rtl"
+        dir={lang === "ar" ? "rtl" : "ltr"}
       >
         <div className="max-w-sm w-full text-center space-y-6">
           <div className="w-20 h-20 bg-[#e8f5e9] rounded-full flex items-center justify-center mx-auto shadow-lg">
             <CheckCircle2 className="w-10 h-10 text-primary" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-black text-[#191c1c]">تم إنشاء البطولة! 🎉</h2>
+            <h2 className="text-xl font-black text-[#191c1c]">{d.successTitle}</h2>
             <p className="text-sm text-on-surface-variant/70">
-              تم إنشاء البطولة "{form.name}" بنجاح. يمكنك الآن إدارتها وقبول تسجيلات الفرق.
+              {d.successDesc.replace('{name}', form.name)}
             </p>
           </div>
           <div className="flex flex-col gap-3">
@@ -285,13 +420,13 @@ export function CreateTournament() {
               onClick={() => navigate(`/tournaments/${createdId}`)}
               className="w-full h-11 bg-primary hover:bg-[#005318] text-white font-bold rounded-xl text-sm transition-all"
             >
-              عرض البطولة
+              {d.btnView}
             </button>
             <button
               onClick={() => navigate('/tournaments')}
               className="w-full h-11 border border-[#e1e3e1] text-on-surface-variant font-bold rounded-xl text-sm hover:bg-[#f0f2f0] transition-all"
             >
-              العودة للقائمة
+              {d.btnBack}
             </button>
           </div>
         </div>
@@ -301,10 +436,10 @@ export function CreateTournament() {
 
   // ── Form ─────────────────────────────────────────────────────────────────
 
-  const isFormValid = Object.keys(validate(form)).length === 0;
+  const isFormValid = Object.keys(validate(form, d)).length === 0;
 
   return (
-    <div className="min-h-screen bg-[#f6f8f7] pb-16" dir="rtl">
+    <div className="min-h-screen bg-[#f6f8f7] pb-16" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Header */}
       <div className="bg-linear-to-br from-[#002b0e] via-primary to-[#00a336] pt-12 pb-8 px-4 relative overflow-hidden">
         <div
@@ -316,16 +451,16 @@ export function CreateTournament() {
             onClick={() => navigate('/tournaments')}
             className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-bold mb-4 transition-colors"
           >
-            <ArrowRight className="w-3.5 h-3.5" /> العودة للبطولات
+            <ArrowRight className="w-3.5 h-3.5" /> {d.btnBackTop}
           </button>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
               <Trophy className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white">إنشاء بطولة جديدة</h1>
+              <h1 className="text-2xl font-black text-white">{d.title}</h1>
               <p className="text-white/70 text-xs mt-0.5">
-                أنشئ بطولتك واستقبل تسجيلات الفرق
+                {d.subtitle}
               </p>
             </div>
           </div>
@@ -336,13 +471,13 @@ export function CreateTournament() {
       <div className="max-w-2xl mx-auto px-4 md:px-0 -mt-4 space-y-5">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* ── Section 1: Basic Info ── */}
-          <FormSection title="معلومات البطولة الأساسية" icon={<Info className="w-4 h-4" />}>
-            <FormField label="اسم البطولة" required error={touched.has('name') ? errors.name : undefined}>
+          <FormSection title={d.secBasic} icon={<Info className="w-4 h-4" />}>
+            <FormField label={d.lblName} required error={touched.has('name') ? errors.name : undefined}>
               <div className="relative">
                 <Trophy className="absolute inset-s-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                 <input
                   type="text"
-                  placeholder="مثال: October Weekend League"
+                  placeholder={d.plhName}
                   value={form.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   onBlur={() => touch('name')}
@@ -352,14 +487,14 @@ export function CreateTournament() {
             </FormField>
 
             <FormField
-              label="وصف البطولة"
+              label={d.lblDesc}
               required
               error={touched.has('description') ? errors.description : undefined}
-              hint="أضف تفاصيل تساعد الفرق على معرفة طبيعة البطولة"
+              hint={d.hintDesc}
             >
               <textarea
                 rows={4}
-                placeholder="اكتب وصفاً شاملاً يحتوي على قواعد البطولة والتفاصيل الهامة..."
+                placeholder={d.plhDesc}
                 value={form.description}
                 onChange={(e) => handleChange('description', e.target.value)}
                 onBlur={() => touch('description')}
@@ -368,9 +503,9 @@ export function CreateTournament() {
             </FormField>
 
             {/* Tournament Type */}
-            <FormField label="نوع البطولة" required error={touched.has('type') ? errors.type : undefined}>
+            <FormField label={d.lblType} required error={touched.has('type') ? errors.type : undefined}>
               <div className="grid grid-cols-3 gap-3">
-                {TOURNAMENT_TYPES.map((t) => (
+                {getTournamentTypes(d).map((t) => (
                   <button
                     key={t.value}
                     type="button"
@@ -392,8 +527,8 @@ export function CreateTournament() {
           </FormSection>
 
           {/* ── Section 2: Teams ── */}
-          <FormSection title="إعدادات الفرق" icon={<Users className="w-4 h-4" />}>
-            <FormField label="عدد الفرق المشاركة" required>
+          <FormSection title={d.secTeams} icon={<Users className="w-4 h-4" />}>
+            <FormField label={d.lblTeamsCount} required>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {TEAM_COUNTS.map((count) => (
                   <button
@@ -407,9 +542,9 @@ export function CreateTournament() {
                     }`}
                   >
                     <span className="text-2xl font-black">{count}</span>
-                    <span className="text-[10px] font-bold">فريق</span>
+                    <span className="text-[10px] font-bold">{d.teamWord}</span>
                     <span className="text-[9px] text-on-surface-variant/60">
-                      {count / 4} مجموعات
+                      {count / 4} {d.groupsWord}
                     </span>
                   </button>
                 ))}
@@ -418,8 +553,8 @@ export function CreateTournament() {
                 <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                   <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
                   <span>
-                    مع {form.numberOfTeams} فريق: {form.numberOfTeams / 4} مجموعات × 4 فرق
-                    — أعلى فريقين من كل مجموعة يتأهلان للدور الإقصائي
+                    {d.teamsDesc1.replace('{count}', String(form.numberOfTeams)).replace('{groups}', String(form.numberOfTeams / 4))}
+                    {d.teamsDesc2}
                   </span>
                 </div>
               </div>
@@ -427,10 +562,10 @@ export function CreateTournament() {
           </FormSection>
 
           {/* ── Section 3: Prizes & Fees ── */}
-          <FormSection title="الجوائز والرسوم" icon={<DollarSign className="w-4 h-4" />}>
+          <FormSection title={d.secPrizes} icon={<DollarSign className="w-4 h-4" />}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                label="الجائزة الكبرى"
+                label={d.lblPrize}
                 required
                 error={touched.has('prize') ? errors.prize : undefined}
               >
@@ -438,7 +573,7 @@ export function CreateTournament() {
                   <Trophy className="absolute inset-s-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
                   <input
                     type="text"
-                    placeholder="مثال: EGP 15,000"
+                    placeholder={d.plhPrize}
                     value={form.prize}
                     onChange={(e) => handleChange('prize', e.target.value)}
                     onBlur={() => touch('prize')}
@@ -448,7 +583,7 @@ export function CreateTournament() {
               </FormField>
 
               <FormField
-                label="رسوم التسجيل (جنيه)"
+                label={d.lblPrice}
                 required
                 error={touched.has('price') ? errors.price : undefined}
               >
@@ -470,10 +605,10 @@ export function CreateTournament() {
           </FormSection>
 
           {/* ── Section 4: الموعد والمكان ── */}
-          <FormSection title="الموعد والمكان" icon={<CalendarDays className="w-4 h-4" />}>
+          <FormSection title={d.secDateLoc} icon={<CalendarDays className="w-4 h-4" />}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                label="تاريخ البداية"
+                label={d.lblStartDate}
                 required
                 error={touched.has('startDate') ? errors.startDate : undefined}
               >
@@ -487,7 +622,7 @@ export function CreateTournament() {
               </FormField>
 
               <FormField
-                label="تاريخ النهاية"
+                label={d.lblEndDate}
                 required
                 error={touched.has('endDate') ? errors.endDate : undefined}
               >
@@ -504,19 +639,19 @@ export function CreateTournament() {
           </FormSection>
 
           {/* ── Section 5: Field ── */}
-          <FormSection title="الملعب" icon={<MapPin className="w-4 h-4" />}>
+          <FormSection title={d.secField} icon={<MapPin className="w-4 h-4" />}>
             <FormField
-              label="اختر الملعب"
+              label={d.lblField}
               required
               error={touched.has('fieldId') ? errors.fieldId : undefined}
-              hint={ownerFields.length === 0 && !isLoadingFields ? 'لا توجد ملاعب مسجلة — أضف ملعبك أولاً من صفحة الملاعب' : undefined}
+              hint={ownerFields.length === 0 && !isLoadingFields ? d.hintNoFields : undefined}
             >
               <div className="relative">
                 <MapPin className="absolute inset-s-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary z-10 pointer-events-none" />
                 {isLoadingFields ? (
                   <div className={`${inputClass('fieldId')} ps-10 flex items-center gap-2 text-on-surface-variant/50`}>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    جار تحميل ملاعبك...
+                    {d.loadingFields}
                   </div>
                 ) : ownerFields.length > 0 ? (
                   <div className="relative">
@@ -526,7 +661,7 @@ export function CreateTournament() {
                       onBlur={() => touch('fieldId')}
                       className={`${inputClass('fieldId')} ps-10 pe-8 appearance-none cursor-pointer`}
                     >
-                      <option value="">-- اختر الملعب --</option>
+                      <option value="">{d.optSelectField}</option>
                       {ownerFields.map((f) => (
                         <option key={f.id} value={String(f.id)}>
                           {f.name} — {f.city}{f.governorate ? ` (${f.governorate})` : ''}
@@ -538,7 +673,7 @@ export function CreateTournament() {
                 ) : (
                   <input
                     type="text"
-                    placeholder="أدخل معرّف الملعب يدوياً..."
+                    placeholder={d.plhFieldId}
                     value={form.fieldId}
                     onChange={(e) => handleChange('fieldId', e.target.value)}
                     onBlur={() => touch('fieldId')}
@@ -553,15 +688,15 @@ export function CreateTournament() {
           {form.name && (
             <div className="bg-linear-to-br from-[#003d12] to-primary rounded-2xl p-5 space-y-3">
               <h3 className="text-white font-bold text-sm flex items-center gap-2">
-                <FileText className="w-4 h-4" /> معاينة البطولة
+                <FileText className="w-4 h-4" /> {d.previewTitle}
               </h3>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {[
-                  { label: 'الاسم', value: form.name },
-                  { label: 'النوع', value: TOURNAMENT_TYPES.find((t) => t.value === form.type)?.label ?? '—' },
-                  { label: 'الفرق', value: `${form.numberOfTeams} فريق` },
-                  { label: 'الجائزة', value: form.prize || '—' },
-                  { label: 'رسوم التسجيل', value: form.price ? `${form.price} جنيه` : '—' },
+                  { label: d.lblPrevName, value: form.name },
+                  { label: d.lblPrevType, value: getTournamentTypes(d).find((t) => t.value === form.type)?.label ?? d.valNone },
+                  { label: d.lblPrevTeams, value: `${form.numberOfTeams} ${d.teamWord}` },
+                  { label: d.lblPrevPrize, value: form.prize || d.valNone },
+                  { label: d.lblPrevPrice, value: form.price ? `${form.price} ${d.valEgp}` : d.valNone },
                 ].map((item) => (
                   <div key={item.label} className="bg-white/10 rounded-lg px-3 py-2">
                     <p className="text-white/60 font-medium">{item.label}</p>
@@ -587,7 +722,7 @@ export function CreateTournament() {
               className="flex-1 h-12 border border-[#e1e3e1] text-on-surface-variant font-bold rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-[#f0f2f0] transition-all"
             >
               <ChevronRight className="w-4 h-4" />
-              إلغاء
+              {d.btnCancel}
             </button>
             <button
               type="submit"
@@ -599,7 +734,7 @@ export function CreateTournament() {
               ) : (
                 <>
                   <Trophy className="w-4 h-4" />
-                  إنشاء البطولة
+                  {isSubmitting ? d.btnCreating : d.btnCreate}
                   <ChevronLeft className="w-4 h-4" />
                 </>
               )}

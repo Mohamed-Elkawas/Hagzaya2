@@ -15,12 +15,14 @@ import { TournamentDetails } from './modules/tournaments/pages/TournamentDetails
 import { CreateTournament } from './modules/tournaments/pages/CreateTournament'
 import { OwnerTournamentsTab } from './modules/tournaments/pages/OwnerTournamentsTab'
 import { OwnerTournamentPaymentsPage } from './modules/tournaments/pages/OwnerTournamentPaymentsPage'
+import TournamentJoinPage from './modules/tournaments/pages/TournamentJoinPage'
 
 // ─── Fields Module Pages ─────────────────────────────────────────────────────
 import { FieldsPage } from './modules/fields/pages/FieldsPage'
 import { FieldDetailsPage } from './modules/fields/pages/FieldDetailsPage'
-import { CreateFieldPage } from './modules/fields/pages/CreateFieldPage'
 import { OwnerFieldsPage } from './modules/fields/pages/OwnerFieldsPage'
+import { CreateFieldPage } from './modules/fields/pages/CreateFieldPage'
+import { OwnerLayout } from './modules/owner/components/OwnerLayout'
 import { OwnerDashboardPage } from './modules/owner/pages/OwnerDashboardPage'
 import { OwnerBookingsPage } from './modules/owner/pages/OwnerBookingsPage'
 
@@ -38,6 +40,7 @@ import { PlayerProfilePage } from './modules/player/pages/PlayerProfilePage'
 import { NotificationSettingsPage } from './modules/player/pages/NotificationSettingsPage'
 import { SecuritySettingsPage } from './modules/player/pages/SecuritySettingsPage'
 import { NotificationList } from './modules/player/components/NotificationList'
+import { PlayerLayout } from './modules/player/components/PlayerLayout'
 
 // ─── Admin Module Pages ──────────────────────────────────────────────────────
 import { AdminDashboard } from './modules/admin/pages/AdminDashboard'
@@ -60,12 +63,30 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* ⚽ Player Core Dashboard */}
-          <Route path="/dashboard" element={<DashboardPage />} />
+          {/* ⚽ Player Routes with Global Navbar */}
+          <Route element={<PlayerLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/fields" element={<FieldsPage />} />
+            <Route path="/fields/:id" element={<FieldDetailsPage />} />
+            <Route path="/my-bookings" element={<MyBookingsPage />} />
+            
+            {/* 🏆 Tournament Player Routes */}
+            <Route path="/tournaments" element={<TournamentExplore />} />
+            <Route path="/tournaments/:id" element={<TournamentDetails />} />
+            <Route path="/tournaments/:id/join" element={<TournamentJoinPage />} />
 
-          {/* 🗺️ Player Fields Routes */}
-          <Route path="/fields" element={<FieldsPage />} />
-          <Route path="/fields/:id" element={<FieldDetailsPage />} />
+            {/* 👤 Player Profile & Settings Routes */}
+            <Route path="/player/profile" element={<PlayerProfilePage />} />
+            <Route path="/player/settings/notifications" element={<NotificationSettingsPage />} />
+            <Route path="/player/settings/security" element={<SecuritySettingsPage />} />
+            <Route path="/player/notifications" element={
+              <div className="min-h-screen bg-[#f6f8f7] pb-16 pt-12 px-4 md:px-8">
+                <div className="max-w-2xl mx-auto">
+                  <NotificationList />
+                </div>
+              </div>
+            } />
+          </Route>
 
           {/* 💳 Booking & Payment Routes (التنقل التتابعي الجديد) */}
           <Route path="/booking/*" element={
@@ -103,35 +124,20 @@ function App() {
             <Route path="tournaments" element={<AdminTournamentsPage />} />
           </Route>
 
-          {/* My Bookings stays outside wizard flow */}
-          <Route path="/my-bookings" element={<MyBookingsPage />} />
+          {/* 💼 Owner Management Routes (Wrapped in OwnerLayout for Sidebar persistence) */}
+          <Route path="/owner" element={<OwnerLayout />}>
+            <Route path="dashboard" element={<OwnerDashboardPage />} />
+            <Route path="bookings" element={<OwnerBookingsPage />} />
+            <Route path="fields" element={<OwnerFieldsPage />} />
+            <Route path="fields/create" element={<CreateFieldPage />} />
+            
+            {/* 🏆 Owner Tournament Management Routes */}
+            <Route path="tournaments" element={<OwnerTournamentsTab />} />
+            <Route path="tournaments/payments" element={<OwnerTournamentPaymentsPage />} />
+          </Route>
 
-          {/* 👤 Player Profile & Settings Routes */}
-          <Route path="/player/profile" element={<PlayerProfilePage />} />
-          <Route path="/player/settings/notifications" element={<NotificationSettingsPage />} />
-          <Route path="/player/settings/security" element={<SecuritySettingsPage />} />
-          <Route path="/player/notifications" element={
-            <div className="min-h-screen bg-[#f6f8f7] pb-16 pt-12 px-4 md:px-8">
-              <div className="max-w-2xl mx-auto">
-                <NotificationList />
-              </div>
-            </div>
-          } />
-
-          {/* 💼 Owner Management Routes */}
-          <Route path="/owner/dashboard" element={<OwnerDashboardPage />} />
-          <Route path="/owner/bookings" element={<OwnerBookingsPage />} />
-          <Route path="/owner/fields" element={<OwnerFieldsPage />} />
-          <Route path="/owner/fields/create" element={<CreateFieldPage />} />
-
-          {/* 🏆 Owner Tournament Management Routes */}
-          <Route path="/owner/tournaments" element={<OwnerTournamentsTab />} />
-          <Route path="/owner/tournaments/payments" element={<OwnerTournamentPaymentsPage />} />
-
-          {/* 🏆 Tournament Module Routes */}
-          <Route path="/tournaments" element={<TournamentExplore />} />
+          {/* 🏆 Tournament Module Owner Route */}
           <Route path="/tournaments/create" element={<CreateTournament />} />
-          <Route path="/tournaments/:id" element={<TournamentDetails />} />
 
           {/* 🔄 Fallback Catch-All */}
           <Route path="*" element={<Navigate to="/" replace />} />

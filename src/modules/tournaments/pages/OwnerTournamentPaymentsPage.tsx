@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { tournamentsApi } from '../api/api';
+import { useLanguage } from '../../../core/context/LanguageContext';
+
 import type { PaymentRequest } from '../types/tournament';
 import { PaymentMethod, PaymentRequestStatus } from '../types/tournament';
 
@@ -57,26 +59,27 @@ function formatDate(iso?: string): string {
 // ── Status Badge ──────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useLanguage();
   switch (status) {
     case PaymentRequestStatus.Pending:
       return (
         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-          بانتظار المراجعة
+          {t('owner.payments.filter.pending')}
         </span>
       );
     case PaymentRequestStatus.Approved:
       return (
         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
           <CheckCircle2 className="w-3 h-3" />
-          مُعتمد
+          {t('owner.payments.filter.approved')}
         </span>
       );
     case PaymentRequestStatus.Rejected:
       return (
         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-200">
           <XCircle className="w-3 h-3" />
-          مرفوض
+          {t('owner.payments.filter.rejected')}
         </span>
       );
     default:
@@ -97,6 +100,7 @@ interface RejectDialogProps {
 }
 
 function RejectDialog({ onConfirm, onCancel, isSubmitting }: RejectDialogProps) {
+  const { t } = useLanguage();
   const [reason, setReason] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -122,8 +126,8 @@ function RejectDialog({ onConfirm, onCancel, isSubmitting }: RejectDialogProps) 
               <XCircle className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h3 className="text-white font-black text-sm">رفض طلب الدفع</h3>
-              <p className="text-red-100 text-[11px]">يجب تقديم سبب واضح</p>
+              <h3 className="text-white font-black text-sm">{t('owner.payments.reject.title')}</h3>
+              <p className="text-red-100 text-[11px]">{t('owner.payments.reject.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -131,18 +135,18 @@ function RejectDialog({ onConfirm, onCancel, isSubmitting }: RejectDialogProps) 
         <div className="p-5 space-y-4">
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-slate-700">
-              سبب الرفض <span className="text-red-500">*</span>
+              {t('owner.payments.reject.reasonLabel')} <span className="text-red-500">*</span>
             </label>
             <textarea
               ref={inputRef}
               rows={4}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="مثال: إيصال الدفع غير واضح أو المبلغ غير مطابق..."
+              placeholder={t('owner.payments.reject.placeholder') as string}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none transition-all"
             />
             {reason.length > 0 && reason.trim().length < 5 && (
-              <p className="text-[11px] text-red-500">السبب يجب أن يكون 5 أحرف على الأقل</p>
+              <p className="text-[11px] text-red-500">{t('owner.payments.reject.errorLength')}</p>
             )}
           </div>
           <div className="flex gap-3">
@@ -151,7 +155,7 @@ function RejectDialog({ onConfirm, onCancel, isSubmitting }: RejectDialogProps) 
               disabled={isSubmitting}
               className="flex-1 h-10 border border-slate-200 text-slate-600 font-bold rounded-xl text-sm hover:bg-slate-50 transition-all disabled:opacity-50"
             >
-              إلغاء
+              {t('owner.payments.reject.cancel')}
             </button>
             <button
               onClick={() => onConfirm(reason.trim())}
@@ -163,7 +167,7 @@ function RejectDialog({ onConfirm, onCancel, isSubmitting }: RejectDialogProps) 
               ) : (
                 <>
                   <XCircle className="w-4 h-4" />
-                  تأكيد الرفض
+                  {t('owner.payments.reject.confirm')}
                 </>
               )}
             </button>
@@ -184,6 +188,7 @@ interface PaymentRowProps {
 }
 
 function PaymentRow({ request, onApprove, onReject, actionLoadingId }: PaymentRowProps) {
+  const { t } = useLanguage();
   const isLoading = actionLoadingId === request.id;
   const isPending = request.status === PaymentRequestStatus.Pending;
 
@@ -238,7 +243,7 @@ function PaymentRow({ request, onApprove, onReject, actionLoadingId }: PaymentRo
                 onClick={(e) => e.stopPropagation()}
               >
                 <ExternalLink className="w-3 h-3" />
-                عرض الإيصال
+                {t('owner.payments.action.viewProof')}
               </a>
             )}
         </div>
@@ -268,7 +273,7 @@ function PaymentRow({ request, onApprove, onReject, actionLoadingId }: PaymentRo
               ) : (
                 <CheckCircle2 className="w-3 h-3" />
               )}
-              اعتماد الدفعة
+              {t('owner.payments.action.approve')}
             </button>
             <button
               onClick={() => onReject(request.id)}
@@ -280,11 +285,11 @@ function PaymentRow({ request, onApprove, onReject, actionLoadingId }: PaymentRo
               ) : (
                 <XCircle className="w-3 h-3" />
               )}
-              رفض الدفع
+              {t('owner.payments.action.reject')}
             </button>
           </div>
         ) : (
-          <span className="text-[11px] text-slate-400 italic">لا إجراءات</span>
+          <span className="text-[11px] text-slate-400 italic">{t('owner.payments.action.noActions')}</span>
         )}
       </td>
     </tr>
@@ -305,67 +310,12 @@ function SkeletonRow() {
   );
 }
 
-// ── Owner Sidebar (shared layout pattern) ─────────────────────────────────────
 
-function OwnerSidebar() {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const navigation = [
-    { name: 'لوحة البيانات', icon: LayoutDashboard, path: '/owner/dashboard' },
-    { name: 'إدارة ملاعبي', icon: Activity, path: '/owner/fields' },
-    { name: 'طلبات الحجز', icon: CalendarDays, path: '/owner/bookings' },
-    { name: 'البطولات', icon: Trophy, path: '/owner/tournaments' },
-    { name: 'مدفوعات البطولات', icon: BadgeDollarSign, path: '/owner/tournaments/payments' },
-    { name: 'التقارير', icon: FileText, path: '/owner/reports' },
-    { name: 'الإعدادات', icon: Settings, path: '/owner/settings' },
-  ];
-
-  return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 sticky top-0 h-screen overflow-y-auto">
-      <div className="p-6 border-b border-slate-800">
-        <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-          <span className="text-indigo-400">Hagzaya</span> Owner
-        </h2>
-      </div>
-      <nav className="flex-1 p-4 space-y-1 mt-4">
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <button
-              key={item.name}
-              onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm ${
-                isActive
-                  ? 'bg-indigo-600 text-white font-bold shadow-md'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white font-semibold'
-              }`}
-            >
-              <item.icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} />
-              <span>{item.name}</span>
-            </button>
-          );
-        })}
-      </nav>
-      <div className="p-4 border-t border-slate-800">
-        <button
-          onClick={() => {
-            localStorage.removeItem('hagzaya_token');
-            navigate('/login');
-          }}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 font-semibold transition-all text-sm"
-        >
-          <LogOut size={18} />
-          <span>تسجيل الخروج</span>
-        </button>
-      </div>
-    </aside>
-  );
-}
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export function OwnerTournamentPaymentsPage() {
+  const { t } = useLanguage();
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -386,7 +336,7 @@ export function OwnerTournamentPaymentsPage() {
       const list = Array.isArray(data) ? data : (data as any)?.data ?? [];
       setRequests(list);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'تعذر تحميل طلبات الدفع');
+      setError(err instanceof Error ? err.message : t('owner.payments.alert.fetchError'));
       // Fallback to mock data for development
       setRequests(MOCK_PAYMENT_REQUESTS);
     } finally {
@@ -408,9 +358,9 @@ export function OwnerTournamentPaymentsPage() {
           r.id === id ? { ...r, status: PaymentRequestStatus.Approved } : r
         )
       );
-      toast.success('تم اعتماد الدفعة بنجاح ✅');
+      toast.success(t('owner.payments.toast.approveSuccess'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'فشل اعتماد الدفعة');
+      toast.error(err instanceof Error ? err.message : t('owner.payments.toast.approveError'));
     } finally {
       setActionLoadingId(null);
     }
@@ -427,10 +377,10 @@ export function OwnerTournamentPaymentsPage() {
           r.id === rejectTargetId ? { ...r, status: PaymentRequestStatus.Rejected } : r
         )
       );
-      toast.success('تم رفض الدفعة وإبلاغ الفريق');
+      toast.success(t('owner.payments.toast.rejectSuccess'));
       setRejectTargetId(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'فشل رفض الدفعة');
+      toast.error(err instanceof Error ? err.message : t('owner.payments.toast.rejectError'));
     } finally {
       setIsRejecting(false);
     }
@@ -449,25 +399,25 @@ export function OwnerTournamentPaymentsPage() {
 
   const kpis = [
     {
-      label: 'إجمالي الطلبات',
+      label: t('owner.payments.kpi.total'),
       value: requests.length,
       icon: <ClipboardList className="w-5 h-5" />,
       color: 'bg-slate-50 text-slate-600',
     },
     {
-      label: 'بانتظار المراجعة',
+      label: t('owner.payments.kpi.pending'),
       value: pending.length,
       icon: <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />,
       color: 'bg-amber-50 text-amber-700',
     },
     {
-      label: 'تم الاعتماد',
+      label: t('owner.payments.kpi.approved'),
       value: approved.length,
       icon: <CheckCircle2 className="w-5 h-5" />,
       color: 'bg-emerald-50 text-emerald-700',
     },
     {
-      label: 'الإيرادات المحصّلة',
+      label: t('owner.payments.kpi.revenue'),
       value: formatEGP(totalRevenue),
       icon: <BadgeDollarSign className="w-5 h-5" />,
       color: 'bg-indigo-50 text-indigo-700',
@@ -475,148 +425,141 @@ export function OwnerTournamentPaymentsPage() {
   ];
 
   const STATUS_FILTER_OPTIONS = [
-    { value: 'all', label: 'الكل' },
-    { value: 'pending', label: 'بانتظار المراجعة' },
-    { value: 'approved', label: 'معتمد' },
-    { value: 'rejected', label: 'مرفوض' },
+    { value: 'all', label: t('owner.payments.filter.all') },
+    { value: 'pending', label: t('owner.payments.filter.pending') },
+    { value: 'approved', label: t('owner.payments.filter.approved') },
+    { value: 'rejected', label: t('owner.payments.filter.rejected') },
   ] as const;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans flex" dir="rtl">
-      {/* Sidebar */}
-      <OwnerSidebar />
+    <div className="p-4 md:p-8">
+      {/* Page Header */}
+      <header className="bg-white border-b border-slate-200 px-8 py-6 rounded-2xl mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+              <BadgeDollarSign className="w-6 h-6 text-indigo-600" />
+              {t('owner.payments.title')}
+            </h1>
+            <p className="text-sm font-medium text-slate-500 mt-1">
+              {t('owner.payments.subtitle')}
+            </p>
+          </div>
+          <button
+            onClick={fetchRequests}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+          >
+            <RefreshCw className="w-4 h-4" />
+            {t('owner.payments.refresh')}
+          </button>
+        </div>
+      </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-x-hidden">
-        {/* Page Header */}
-        <header className="bg-white border-b border-slate-200 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                <BadgeDollarSign className="w-6 h-6 text-indigo-600" />
-                مدفوعات البطولات
-              </h1>
-              <p className="text-sm font-medium text-slate-500 mt-1">
-                راجع واعتمد أو ارفض طلبات تسجيل الفرق في بطولاتك
-              </p>
-            </div>
-            <button
-              onClick={fetchRequests}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+      <div className="space-y-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          {kpis.map((kpi) => (
+            <div
+              key={kpi.label}
+              className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-start gap-4 hover:shadow-md transition-all"
             >
-              <RefreshCw className="w-4 h-4" />
-              تحديث
-            </button>
-          </div>
-        </header>
-
-        <div className="p-8 space-y-6">
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-            {kpis.map((kpi) => (
-              <div
-                key={kpi.label}
-                className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-start gap-4 hover:shadow-md transition-all"
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${kpi.color}`}>
-                  {kpi.icon}
-                </div>
-                <div>
-                  <p className="text-xl font-black text-slate-900">{kpi.value}</p>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">{kpi.label}</p>
-                </div>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${kpi.color}`}>
+                {kpi.icon}
               </div>
-            ))}
-          </div>
-
-          {/* Error Banner */}
-          {error && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
               <div>
-                <p className="text-sm font-bold text-amber-800">⚠️ {error}</p>
-                <p className="text-xs text-amber-600 mt-0.5">يتم عرض بيانات تجريبية</p>
+                <p className="text-xl font-black text-slate-900">{kpi.value}</p>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">{kpi.label}</p>
               </div>
             </div>
-          )}
+          ))}
+        </div>
 
-          {/* Table Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            {/* Table Toolbar */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
-              <h2 className="text-sm font-black text-slate-900">
-                طلبات الدفع ({filtered.length})
-              </h2>
-              {/* Status Filter Pills */}
-              <div className="flex items-center gap-1.5">
-                {STATUS_FILTER_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setStatusFilter(opt.value)}
-                    className={`text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all ${
-                      statusFilter === opt.value
-                        ? 'bg-indigo-600 text-white shadow'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+        {/* Error Banner */}
+        {error && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-amber-800">⚠️ {error}</p>
+              <p className="text-xs text-amber-600 mt-0.5">{t('owner.payments.alert.errorData')}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Table Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* Table Toolbar */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h2 className="text-sm font-black text-slate-900">
+              {t('owner.payments.title')} ({filtered.length})
+            </h2>
+            <div className="flex items-center gap-1.5">
+              {STATUS_FILTER_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setStatusFilter(opt.value)}
+                  className={`text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all ${
+                    statusFilter === opt.value
+                      ? 'bg-indigo-600 text-white shadow'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Table */}
+          {isLoading ? (
+            <table className="w-full text-right">
+              <tbody>
+                {[...Array(4)].map((_, i) => <SkeletonRow key={i} />)}
+              </tbody>
+            </table>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+              <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center">
+                <ClipboardList className="w-7 h-7 text-slate-400" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-700">{t('owner.payments.empty.noRequests')}</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {statusFilter === 'all'
+                    ? t('owner.payments.empty.all')
+                    : `${t('owner.payments.empty.filter')} "${STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter)?.label}"`}
+                </p>
               </div>
             </div>
-
-            {/* Table */}
-            {isLoading ? (
-              <table className="w-full text-right">
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-right border-collapse text-xs font-medium text-slate-700 whitespace-nowrap">
+                <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-100">
+                  <tr>
+                    <th className="px-5 py-3.5 text-right">{t('owner.payments.table.team')}</th>
+                    <th className="px-5 py-3.5 text-right">{t('owner.payments.table.captain')}</th>
+                    <th className="px-5 py-3.5 text-right">{t('owner.payments.table.amount')}</th>
+                    <th className="px-5 py-3.5 text-right">{t('owner.payments.table.method')}</th>
+                    <th className="px-5 py-3.5 text-right">{t('owner.payments.table.status')}</th>
+                    <th className="px-5 py-3.5 text-right">{t('owner.payments.table.date')}</th>
+                    <th className="px-5 py-3.5 text-center">{t('owner.payments.table.actions')}</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {[...Array(4)].map((_, i) => <SkeletonRow key={i} />)}
+                  {filtered.map((request) => (
+                    <PaymentRow
+                      key={request.id}
+                      request={request}
+                      onApprove={handleApprove}
+                      onReject={(id) => setRejectTargetId(id)}
+                      actionLoadingId={actionLoadingId}
+                    />
+                  ))}
                 </tbody>
               </table>
-            ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-                <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center">
-                  <ClipboardList className="w-7 h-7 text-slate-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-700">لا توجد طلبات</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {statusFilter === 'all'
-                      ? 'لم يتم استلام أي طلبات دفع حتى الآن'
-                      : `لا توجد طلبات بحالة "${STATUS_FILTER_OPTIONS.find((o) => o.value === statusFilter)?.label}"`}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-right border-collapse text-xs font-medium text-slate-700 whitespace-nowrap">
-                  <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-100">
-                    <tr>
-                      <th className="px-5 py-3.5 text-right">الفريق / البطولة</th>
-                      <th className="px-5 py-3.5 text-right">قائد الفريق</th>
-                      <th className="px-5 py-3.5 text-right">المبلغ المطلوب</th>
-                      <th className="px-5 py-3.5 text-right">طريقة الدفع</th>
-                      <th className="px-5 py-3.5 text-right">الحالة</th>
-                      <th className="px-5 py-3.5 text-right">تاريخ الطلب</th>
-                      <th className="px-5 py-3.5 text-center">الإجراءات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((request) => (
-                      <PaymentRow
-                        key={request.id}
-                        request={request}
-                        onApprove={handleApprove}
-                        onReject={(id) => setRejectTargetId(id)}
-                        actionLoadingId={actionLoadingId}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </main>
+      </div>
 
       {/* Reject Dialog Overlay */}
       {rejectTargetId !== null && (

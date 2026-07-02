@@ -101,119 +101,9 @@ export function DashboardPage() {
   const displayedTournaments: Tournament[] =
     popularTournaments.length > 0 ? popularTournaments : seedTournaments
 
-  const handleLogout = () => {
-    localStorage.removeItem('hagzaya_token')
-    localStorage.removeItem('hagzaya_role')
-    window.location.href = '/'
-  }
-
-  // الحصول على أول حرف من الاسم لعرضه داخل الأفاتار
-  const userInitial = userName ? userName.trim().charAt(0).toUpperCase() : 'M'
-
+  // ─── HERO SECTION ───
   return (
-    <div className={`min-h-screen bg-[#f6f8f7] pb-16 ${lang === 'ar' ? 'font-ar' : 'font-en'}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-
-      {/* ─── 1. NAVBAR ─── */}
-      <nav className="bg-white border-b border-[#e1e3e1] sticky top-0 z-50 h-16 px-4 md:px-8 flex items-center justify-between max-w-[1400px] mx-auto">
-        <div className="flex items-center gap-8">
-          {/* Logo */}
-          <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => navigate('/dashboard')}>
-            <div className="w-8 h-8 bg-[#006b20] rounded-xl flex items-center justify-center text-white">
-              <span className="material-symbols-outlined text-xl">sports_soccer</span>
-            </div>
-            <span className="text-xl font-bold tracking-wider text-[#006b20] font-mono">HAGZAYA</span>
-          </div>
-
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center gap-5 text-sm font-semibold">
-            <button className="px-4 py-2 rounded-xl bg-[#e8f5e9] text-[#006b20] flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-lg">home</span>
-              <span>{t('nav.home')}</span>
-            </button>
-            <button onClick={() => navigate('/fields')} className="px-4 py-2 rounded-xl text-[#3e4a3c] hover:bg-[#f0f2f0] flex items-center gap-1.5 transition-colors">
-              <span className="material-symbols-outlined text-lg">stadium</span>
-              <span>{t('nav.fields')}</span>
-            </button>
-            <button onClick={() => navigate('/tournaments')} className="px-4 py-2 rounded-xl text-[#3e4a3c] hover:bg-[#f0f2f0] flex items-center gap-1.5 transition-colors">
-              <span className="material-symbols-outlined text-lg">trophy</span>
-              <span>{t('nav.tournaments')}</span>
-            </button>
-            <button onClick={() => navigate('/my-bookings')} className="px-4 py-2 rounded-xl text-[#3e4a3c] hover:bg-[#f0f2f0] flex items-center gap-1.5 transition-colors">
-              <span className="material-symbols-outlined text-lg">calendar_month</span>
-              <span>{t('nav.bookings')}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Left Side: Language & Profile */}
-        <div className="flex items-center gap-4 relative">
-          <button
-            onClick={toggleLanguage}
-            className="text-sm font-semibold text-[#3e4a3c] flex items-center gap-1 hover:bg-[#f0f2f0] px-3 py-1.5 rounded-lg transition-colors"
-          >
-            <span className="material-symbols-outlined text-lg">translate</span>
-            <span>{lang === 'ar' ? 'EN' : 'AR'}</span>
-          </button>
-
-          <button className="w-8 h-8 flex items-center justify-center bg-[#f0f2f0] rounded-full hover:bg-[#e1e3e1] transition-colors relative">
-            <span className="material-symbols-outlined text-xl text-[#3e4a3c]">notifications</span>
-            <span className="absolute top-1 right-1 w-2 h-2 bg-[#006b20] rounded-full"></span>
-          </button>
-
-          {/* User Profile Dropdown TRIGGER */}
-          <div className="relative">
-            <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="w-10 h-10 rounded-full bg-[#006b20]/10 border border-[#006b20]/20 flex items-center justify-center text-[#006b20] font-bold text-sm cursor-pointer hover:bg-[#006b20]/20 transition-all"
-            >
-              {userInitial}
-            </button>
-
-            {/* Profile Menu Dropdown Overlay */}
-            {showProfileMenu && (
-              <div className={`absolute ${lang === 'ar' ? 'left-0' : 'right-0'} mt-3 w-64 bg-white rounded-2xl shadow-xl border border-[#e1e3e1] py-3 z-50 animate-fade-in`}>
-                <div className="px-4 py-2 border-b border-[#e1e3e1] mb-2 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#f0f2f0] flex items-center justify-center text-sm font-bold text-[#3e4a3c] shrink-0">
-                    {userInitial}
-                  </div>
-                  {/* ✅ عرض اسم المستخدم الحقيقي هنا */}
-                  <div className="text-xs font-semibold text-[#191c1c] truncate">
-                    {userName}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => navigate('/player/profile')}
-                  className="w-full px-4 py-2.5 text-start text-sm font-medium text-[#3e4a3c] hover:bg-[#f0f2f0] flex items-center gap-3 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-lg text-[#3e4a3c]/70">person</span>
-                  <span>{t('menu.profile')}</span>
-                </button>
-                <button className="w-full px-4 py-2.5 text-start text-sm font-medium text-[#3e4a3c] hover:bg-[#f0f2f0] flex items-center gap-3 transition-colors">
-                  <span className="material-symbols-outlined text-lg text-[#3e4a3c]/70">star</span>
-                  <span>{t('menu.favorites')}</span>
-                </button>
-                <button className="w-full px-4 py-2.5 text-start text-sm font-medium text-[#3e4a3c] hover:bg-[#f0f2f0] flex items-center gap-3 transition-colors">
-                  <span className="material-symbols-outlined text-lg text-[#3e4a3c]/70">trophy</span>
-                  <span>{t('menu.myTournaments')}</span>
-                </button>
-                <button className="w-full px-4 py-2.5 text-start text-sm font-medium text-[#3e4a3c] hover:bg-[#f0f2f0] flex items-center gap-3 transition-colors">
-                  <span className="material-symbols-outlined text-lg text-[#3e4a3c]/70">settings</span>
-                  <span>{t('menu.settings')}</span>
-                </button>
-                <div className="h-[1px] bg-[#e1e3e1] my-2"></div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full px-4 py-2.5 text-start text-sm font-semibold text-[#ba1a1a] hover:bg-rose-50 flex items-center gap-3 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-lg">logout</span>
-                  <span>{t('menu.logout')}</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
+    <>
 
       {/* ─── 2. HERO SECTION ─── */}
       <header className="relative min-h-[450px] bg-slate-800 flex flex-col items-center justify-center text-center px-4 py-12 overflow-hidden">
@@ -376,7 +266,7 @@ export function DashboardPage() {
           </div>
         </section>
       </main>
-    </div>
+    </>
   )
 }
 

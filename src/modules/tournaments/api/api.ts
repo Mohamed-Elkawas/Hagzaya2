@@ -5,6 +5,7 @@
 
 import type {
   Tournament,
+  AvailablePlayer,
   PlayerProfile,
   GetTournamentsParams,
   CreateTournamentPayload,
@@ -154,9 +155,17 @@ export const tournamentsApi = {
     return request<Tournament>(`/api/tournaments/${id}`);
   },
 
-  getAllPlayers: async (search?: string): Promise<PlayerProfile[]> => {
-    const query = buildQueryString({ search });
+  /** Search players by username — fires GET /api/tournaments/players/search?username=…
+   *  Returns [] immediately when `username` is empty (avoids 400 validation error). */
+  searchPlayers: async (username: string): Promise<PlayerProfile[]> => {
+    if (!username.trim()) return [];
+    const query = buildQueryString({ username });
     return request<PlayerProfile[]>(`/api/tournaments/players/search${query}`);
+  },
+
+  /** Fetch the full player roster — GET /api/players — used for Step 2 member picker */
+  getAllPlayers: async (): Promise<AvailablePlayer[]> => {
+    return request<AvailablePlayer[]>('/api/players');
   },
 
   joinTournament: async (

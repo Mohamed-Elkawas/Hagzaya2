@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fieldsApi } from '../api/fields.api';
+import { useLanguage } from '../../../core/context/LanguageContext';
 import { FieldType, FieldSurface } from '../types/fields.types';
 import type { CreateFieldPayload } from '../types/fields.types';
 import { toast } from 'sonner';
@@ -27,93 +28,163 @@ interface FilePickerProps {
     uploaded?: boolean;
 }
 
-function FilePicker({ label, hint, icon: Icon, accept, file, onChange, required, uploading, uploaded }: FilePickerProps) {
+function FilePicker({ label, hint, accept, file, onChange, uploading, uploaded, icon: Icon }: { label: string; hint?: string; accept: string; file: File | null; onChange: (f: File | null) => void; uploading?: boolean; uploaded?: boolean; icon: any; }) {
+    const { lang } = useLanguage();
+    const fp = lang === 'ar'
+        ? { uploading: 'جار الرفع...', uploadSuccess: 'تم الرفع بنجاح ✓', readyToUpload: 'جاهز للرفع', clickToChoose: 'اضغط لاختيار ملف' }
+        : { uploading: 'Uploading...', uploadSuccess: 'Uploaded successfully ✓', readyToUpload: 'Ready to upload', clickToChoose: 'Click to choose file' };
     const ref = useRef<HTMLInputElement>(null);
-
-    const borderColor = uploaded
-        ? 'border-emerald-400 bg-emerald-50/60'
-        : file
-        ? 'border-indigo-300 bg-indigo-50/40'
-        : 'border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/20';
-
-    const iconBg = uploaded
-        ? 'bg-emerald-100 text-emerald-600'
-        : file
-        ? 'bg-indigo-100 text-indigo-600'
-        : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-500';
-
     return (
         <div className="space-y-2">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                {label} {required && <span className="text-rose-500">*</span>}
+                {label}
             </label>
+            {hint && <p className="text-[11px] text-slate-400">{hint}</p>}
             <div
                 onClick={() => !uploading && ref.current?.click()}
-                className={`relative flex items-center gap-4 p-4 border-2 border-dashed rounded-xl transition-all duration-200 group ${borderColor} ${uploading ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+                className={`relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-5 cursor-pointer transition-all
+                    ${uploading ? 'border-indigo-300 bg-indigo-50 cursor-wait' : uploaded ? 'border-emerald-400 bg-emerald-50' : file ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-slate-50 hover:border-indigo-300'}`}
             >
-                <div className={`p-3 rounded-xl shrink-0 transition-all ${iconBg}`}>
-                    {uploading ? (
-                        <Loader2 size={20} className="animate-spin" />
-                    ) : uploaded ? (
-                        <CheckCircle2 size={20} />
-                    ) : file ? (
-                        <FileCheck size={20} />
-                    ) : (
-                        <Icon size={20} />
-                    )}
-                </div>
-                <div className="flex-1 min-w-0">
-                    {uploading ? (
-                        <>
-                            <p className="text-sm font-bold text-indigo-700">جاري الرفع...</p>
-                            <div className="h-1.5 bg-indigo-200 rounded-full mt-2 overflow-hidden">
-                                <div className="h-full bg-indigo-600 rounded-full w-2/3 animate-pulse" />
-                            </div>
-                        </>
-                    ) : uploaded ? (
-                        <p className="text-sm font-bold text-emerald-700">تم الرفع بنجاح ✓</p>
-                    ) : file ? (
-                        <>
-                            <p className="text-sm font-bold text-indigo-800 truncate">{file.name}</p>
-                            <p className="text-xs text-indigo-500 mt-0.5">{(file.size / 1024).toFixed(1)} KB — جاهز للرفع</p>
-                        </>
-                    ) : (
-                        <>
-                            <p className="text-sm font-semibold text-slate-600">اضغط لاختيار ملف</p>
-                            <p className="text-xs text-slate-400 mt-0.5">{hint}</p>
-                        </>
-                    )}
-                </div>
-                {file && !uploading && !uploaded && (
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onChange(null); }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors shrink-0"
-                    >
-                        <X size={16} />
-                    </button>
+                {uploading ? (
+                    <><Loader2 size={22} className="text-indigo-500 animate-spin" /><span className="text-xs font-semibold text-indigo-600">{fp.uploading}</span></>
+                ) : uploaded ? (
+                    <><CheckCircle2 size={22} className="text-emerald-500" /><span className="text-xs font-semibold text-emerald-600">{fp.uploadSuccess}</span></>
+                ) : file ? (
+                    <><FileCheck size={22} className="text-indigo-500" /><span className="text-xs font-semibold text-indigo-600 truncate max-w-[180px]">{file.name}</span>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); onChange(null); }} className="absolute top-2 right-2 text-slate-400 hover:text-rose-500"><X size={14} /></button></>
+                ) : (
+                    <><Icon size={22} className="text-slate-400" />
+                    <span className="text-xs text-slate-400">{fp.readyToUpload}</span>
+                    <span className="text-[10px] text-indigo-500 font-semibold">{fp.clickToChoose}</span></>
                 )}
-                <input
-                    ref={ref}
-                    type="file"
-                    accept={accept}
-                    className="hidden"
-                    onChange={(e) => { onChange(e.target.files?.[0] ?? null); e.target.value = ''; }}
-                />
             </div>
+            <input ref={ref} type="file" accept={accept} className="hidden" onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
         </div>
     );
 }
 
-// ─── Styled Amenity Checkbox ──────────────────────────────────────────────────
-function AmenityCheck({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+// ─── Shared input class ───────────────────────────────────────────────────────
+const inputCls = "w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50";
+
+
+// ─── Local Dictionary ────────────────────────────────────────────────────────
+const DICT = {
+  ar: {
+    successMsg: 'تم إنشاء الملعب بنجاح! في انتظار موافقة الإدارة.',
+    errorMsg: 'حدث خطأ أثناء إنشاء الملعب',
+    btnIdle: 'تقديم طلب إضافة الملعب',
+    btnUploadingLicense: 'جار رفع الرخصة...',
+    btnUploadingPhoto: 'جار رفع الصورة...',
+    btnSaving: 'جار حفظ بيانات الملعب...',
+    btnDone: 'تم!',
+    title: 'إضافة ملعب جديد',
+    subtitle: 'قم بإدخال مواصفات ملعبك بدقة ليتم عرضه للاعبين في النظام.',
+    secBasic: 'المعلومات الأساسية والمستندات',
+    lblName: 'اسم الملعب',
+    plhName: 'مثال: ملعب سانتياغو الخماسي',
+    lblLicense: 'رخصة الملعب',
+    hintLicense: 'PDF, JPG, PNG — يُرفع قبل الحفظ تلقائياً',
+    lblPhoto: 'الصورة الرئيسية للملعب',
+    hintPhoto: 'JPG, PNG, WEBP — حجم أقصى 5MB',
+    secLoc: 'تفاصيل الموقع',
+    lblGov: 'المحافظة',
+    plhGov: 'المنوفية',
+    lblCity: 'المدينة',
+    plhCity: 'مدينة السادات',
+    lblVillage: 'القرية / المنطقة',
+    plhVillage: 'المنطقة الرابعة',
+    lblAddress: 'العنوان بالتفصيل',
+    plhAddress: 'شارع الجامعة، بجوار السنتر',
+    lblLat: 'خط العرض (Latitude)',
+    lblLng: 'خط الطول (Longitude)',
+    secPricing: 'المواصفات والأسعار',
+    lblPriceAm: 'سعر الساعة — صباحاً (ج.م)',
+    lblPricePm: 'سعر الساعة — مساءً (ج.م)',
+    lblSize: 'حجم الملعب',
+    size5: 'خماسي (5-a-side)',
+    size7: 'سباعي (7-a-side)',
+    size11: 'قانوني (11-a-side)',
+    lblSurface: 'نوع الأرضية',
+    surfaceArt: 'نجيل صناعي',
+    surfaceNat: 'نجيل طبيعي',
+    surfaceHyb: 'هجين',
+    lblCapacity: 'السعة (عدد اللاعبين)',
+    secSettings: 'الإعدادات والمرافق',
+    lblTimes: 'مواعيد العمل',
+    lblOpen: 'وقت الفتح',
+    lblClose: 'وقت الإغلاق',
+    lblAmenities: 'المرافق والخدمات المتاحة',
+    amLight: 'إضاءة كاشفة ليلية',
+    amPark: 'موقف سيارات آمن',
+    amChange: 'غرف تغيير ملابس',
+    amShower: 'حمامات ودش واستحمام',
+    amCafe: 'بوفيه / كافتيريا مشروبات',
+  },
+  en: {
+    uploading: 'Uploading...',
+    uploadSuccess: 'Uploaded successfully ✓',
+    readyToUpload: 'Ready to upload',
+    clickToChoose: 'Click to choose file',
+    successMsg: 'Field created successfully! Waiting for admin approval.',
+    errorMsg: 'An error occurred while creating the field',
+    btnIdle: 'Submit Field Application',
+    btnUploadingLicense: 'Uploading License...',
+    btnUploadingPhoto: 'Uploading Photo...',
+    btnSaving: 'Saving Field Data...',
+    btnDone: 'Done!',
+    title: 'Add New Field',
+    subtitle: 'Enter your field specifications accurately to display to players in the system.',
+    secBasic: 'Basic Info & Documents',
+    lblName: 'Field Name',
+    plhName: 'e.g., Santiago 5-a-side',
+    lblLicense: 'Field License',
+    hintLicense: 'PDF, JPG, PNG — Auto uploaded before saving',
+    lblPhoto: 'Main Field Photo',
+    hintPhoto: 'JPG, PNG, WEBP — Max size 5MB',
+    secLoc: 'Location Details',
+    lblGov: 'Governorate',
+    plhGov: 'Monufia',
+    lblCity: 'City',
+    plhCity: 'Sadat City',
+    lblVillage: 'Village / Area',
+    plhVillage: 'Fourth District',
+    lblAddress: 'Detailed Address',
+    plhAddress: 'University St, next to the center',
+    lblLat: 'Latitude',
+    lblLng: 'Longitude',
+    secPricing: 'Specifications & Pricing',
+    lblPriceAm: 'Price/Hour — AM (EGP)',
+    lblPricePm: 'Price/Hour — PM (EGP)',
+    lblSize: 'Field Size',
+    size5: '5-a-side',
+    size7: '7-a-side',
+    size11: '11-a-side (Standard)',
+    lblSurface: 'Surface Type',
+    surfaceArt: 'Artificial Turf',
+    surfaceNat: 'Natural Grass',
+    surfaceHyb: 'Hybrid Turf',
+    lblCapacity: 'Capacity (Players)',
+    secSettings: 'Settings & Amenities',
+    lblTimes: 'Working Hours',
+    lblOpen: 'Opening Time',
+    lblClose: 'Closing Time',
+    lblAmenities: 'Available Amenities & Services',
+    amLight: 'Floodlights (Night)',
+    amPark: 'Secure Parking',
+    amChange: 'Changing Rooms',
+    amShower: 'Showers',
+    amCafe: 'Cafeteria / Beverages',
+  }
+};
+
+// ─── AmenityCheck — simple accessible checkbox toggle ────────────────────────
+function AmenityCheck({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void; }) {
     return (
-        <label
-            onClick={() => onChange(!checked)}
-            className="flex items-center gap-3 cursor-pointer group select-none"
-        >
-            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all shrink-0
-                ${checked ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300 group-hover:border-indigo-400'}`}
+        <label className="flex items-center gap-3 cursor-pointer group select-none">
+            <div
+                onClick={() => onChange(!checked)}
+                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all shrink-0
+                    ${checked ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300 group-hover:border-indigo-400'}`}
             >
                 {checked && <span className="text-white text-xs font-black leading-none">✓</span>}
             </div>
@@ -122,11 +193,10 @@ function AmenityCheck({ label, checked, onChange }: { label: string; checked: bo
     );
 }
 
-// ─── Shared input class ───────────────────────────────────────────────────────
-const inputCls = "w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50";
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export function CreateFieldPage() {
+    const { lang } = useLanguage();
+    const d = DICT[lang];
     const navigate = useNavigate();
     const [submitStep, setSubmitStep] = useState<SubmitStep>('idle');
     const isSubmitting = submitStep !== 'idle' && submitStep !== 'done';
@@ -226,12 +296,12 @@ export function CreateFieldPage() {
             await fieldsApi.createField(payload);
 
             setSubmitStep('done');
-            toast.success('تم إنشاء الملعب بنجاح! بانتظار موافقة الإدارة.');
+            toast.success(d.successMsg);
             navigate('/owner/fields');
 
         } catch (err: any) {
             console.error('[CreateField] Pipeline error:', err.message);
-            toast.error(err.message || 'حدث خطأ أثناء إنشاء الملعب');
+            toast.error(err.message || d.errorMsg);
             setSubmitStep('idle');
             // Reset uploaded flags so picker shows correct state if user retries
             setLicenseUploaded(false);
@@ -241,24 +311,22 @@ export function CreateFieldPage() {
 
     // ── Button label ─────────────────────────────────────────────────────────
     const buttonLabel = {
-        idle: 'تقديم طلب إدراج الملعب',
-        'uploading-license': 'جاري رفع رخصة الملعب...',
-        'uploading-photo': 'جاري رفع صورة الملعب...',
-        saving: 'جاري حفظ بيانات الملعب...',
-        done: 'تم!',
+        idle: d.btnIdle,
+        'uploading-license': d.btnUploadingLicense,
+        'uploading-photo': d.btnUploadingPhoto,
+        saving: d.btnSaving,
+        done: d.btnDone,
     }[submitStep];
 
     // ── Render ───────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-[#f8fafc] font-sans py-12" dir="rtl">
+        <div className="min-h-screen bg-[#f8fafc] font-sans py-12" dir={lang === "ar" ? "rtl" : "ltr"}>
             <div className="max-w-4xl mx-auto px-6">
 
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">إضافة ملعب جديد</h1>
-                    <p className="text-sm font-medium text-slate-500 mt-2">
-                        قم بإدخال مواصفات ملعبك بدقة ليتم عرضه للاعبين في النظام.
-                    </p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">{d.title}</h1>
+                    <p className="text-sm font-medium text-slate-500 mt-2">{d.subtitle}</p>
                 </div>
 
                 {/* Progress strip — shown when actively submitting */}
@@ -288,27 +356,27 @@ export function CreateFieldPage() {
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="bg-slate-50 p-5 border-b border-slate-100 flex items-center gap-2">
                             <Info size={18} className="text-indigo-600" />
-                            <h2 className="font-bold text-slate-800">المعلومات الأساسية والمستندات</h2>
+                            <h2 className="font-bold text-slate-800">{d.secBasic}</h2>
                         </div>
                         <div className="p-6 space-y-6">
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                                    اسم الملعب <span className="text-rose-500">*</span>
+                                    {d.lblName} <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     required
                                     value={form.name}
                                     onChange={(e) => set('name', e.target.value)}
-                                    placeholder="مثال: ملعب سانتياغو الخماسي"
+                                    placeholder={d.plhName}
                                     className={inputCls}
                                 />
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <FilePicker
-                                    label="رخصة الملعب"
-                                    hint="PDF, JPG, PNG — يُرفع قبل الحفظ تلقائياً"
+                                    label={d.lblLicense}
+                                    hint={d.hintLicense}
                                     icon={Upload}
                                     accept=".pdf,.jpg,.jpeg,.png"
                                     file={licenseFile}
@@ -317,8 +385,8 @@ export function CreateFieldPage() {
                                     uploaded={licenseUploaded}
                                 />
                                 <FilePicker
-                                    label="الصورة الرئيسية للملعب"
-                                    hint="JPG, PNG, WEBP — حجم أقصى 5MB"
+                                    label={d.lblPhoto}
+                                    hint={d.hintPhoto}
                                     icon={ImageIcon}
                                     accept=".jpg,.jpeg,.png,.webp"
                                     file={photoFile}
@@ -334,31 +402,31 @@ export function CreateFieldPage() {
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="bg-slate-50 p-5 border-b border-slate-100 flex items-center gap-2">
                             <MapPin size={18} className="text-indigo-600" />
-                            <h2 className="font-bold text-slate-800">تفاصيل الموقع</h2>
+                            <h2 className="font-bold text-slate-800">{d.secLoc}</h2>
                         </div>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">المحافظة <span className="text-rose-500">*</span></label>
-                                <input type="text" required value={form.governorate} onChange={(e) => set('governorate', e.target.value)} placeholder="المنوفية" className={inputCls} />
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblGov} <span className="text-rose-500">*</span></label>
+                                <input type="text" required value={form.governorate} onChange={(e) => set('governorate', e.target.value)} placeholder={d.plhGov} className={inputCls} />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">المدينة <span className="text-rose-500">*</span></label>
-                                <input type="text" required value={form.city} onChange={(e) => set('city', e.target.value)} placeholder="مدينة السادات" className={inputCls} />
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblCity} <span className="text-rose-500">*</span></label>
+                                <input type="text" required value={form.city} onChange={(e) => set('city', e.target.value)} placeholder={d.plhCity} className={inputCls} />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">القرية / المنطقة</label>
-                                <input type="text" value={form.village} onChange={(e) => set('village', e.target.value)} placeholder="المنطقة الرابعة" className={inputCls} />
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblVillage}</label>
+                                <input type="text" value={form.village} onChange={(e) => set('village', e.target.value)} placeholder={d.plhVillage} className={inputCls} />
                             </div>
                             <div className="space-y-2 md:col-span-3">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">العنوان بالتفصيل <span className="text-rose-500">*</span></label>
-                                <input type="text" required value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="شارع الجامعة، بجوار السنتر" className={inputCls} />
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblAddress} <span className="text-rose-500">*</span></label>
+                                <input type="text" required value={form.address} onChange={(e) => set('address', e.target.value)} placeholder={d.plhAddress} className={inputCls} />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">خط العرض (Latitude)</label>
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblLat}</label>
                                 <input type="text" required value={form.latitude} onChange={(e) => set('latitude', e.target.value)} dir="ltr" className={`${inputCls} font-mono text-left`} />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">خط الطول (Longitude)</label>
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblLng}</label>
                                 <input type="text" required value={form.longitude} onChange={(e) => set('longitude', e.target.value)} dir="ltr" className={`${inputCls} font-mono text-left`} />
                             </div>
                         </div>
@@ -368,39 +436,39 @@ export function CreateFieldPage() {
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="bg-slate-50 p-5 border-b border-slate-100 flex items-center gap-2">
                             <Tag size={18} className="text-indigo-600" />
-                            <h2 className="font-bold text-slate-800">المواصفات والأسعار</h2>
+                            <h2 className="font-bold text-slate-800">{d.secPricing}</h2>
                         </div>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">سعر الساعة — صباحاً (ج.م)</label>
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblPriceAm}</label>
                                 <input type="number" required min={0} value={form.priceAm}
                                     onChange={(e) => set('priceAm', Number(e.target.value))} className={inputCls} />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">سعر الساعة — مساءً (ج.م)</label>
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblPricePm}</label>
                                 <input type="number" required min={0} value={form.pricePm}
                                     onChange={(e) => set('pricePm', Number(e.target.value))} className={inputCls} />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">حجم الملعب</label>
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblSize}</label>
                                 <select value={form.type} onChange={(e) => set('type', e.target.value)}
                                     className={`${inputCls} appearance-none`}>
-                                    <option value={FieldType.FiveASide}>خماسي (5-a-side)</option>
-                                    <option value={FieldType.SevenASide}>سباعي (7-a-side)</option>
-                                    <option value={FieldType.ElevenASide}>قانوني (11-a-side)</option>
+                                    <option value={FieldType.FiveASide}>{d.size5}</option>
+                                    <option value={FieldType.SevenASide}>{d.size7}</option>
+                                    <option value={FieldType.ElevenASide}>{d.size11}</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">نوع الأرضية</label>
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblSurface}</label>
                                 <select value={form.surface} onChange={(e) => set('surface', e.target.value)}
                                     className={`${inputCls} appearance-none`}>
-                                    <option value={FieldSurface.ArtificialTurf}>نجيل صناعي</option>
-                                    <option value={FieldSurface.NaturalGrass}>نجيل طبيعي</option>
-                                    <option value={FieldSurface.HybridTurf}>هجين</option>
+                                    <option value={FieldSurface.ArtificialTurf}>{d.surfaceArt}</option>
+                                    <option value={FieldSurface.NaturalGrass}>{d.surfaceNat}</option>
+                                    <option value={FieldSurface.HybridTurf}>{d.surfaceHyb}</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">السعة (عدد اللاعبين)</label>
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblCapacity}</label>
                                 <input type="number" required min={2} value={form.capacity}
                                     onChange={(e) => set('capacity', Number(e.target.value))} className={inputCls} />
                             </div>
@@ -411,22 +479,22 @@ export function CreateFieldPage() {
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div className="bg-slate-50 p-5 border-b border-slate-100 flex items-center gap-2">
                             <Settings size={18} className="text-indigo-600" />
-                            <h2 className="font-bold text-slate-800">الإعدادات والمرافق</h2>
+                            <h2 className="font-bold text-slate-800">{d.secSettings}</h2>
                         </div>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
 
                             {/* Times */}
                             <div className="space-y-5">
                                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <Clock size={16} className="text-slate-500" /> مواعيد العمل
+                                    <Clock size={16} className="text-slate-500" /> {d.lblTimes}
                                 </h3>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">وقت الفتح</label>
+                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblOpen}</label>
                                     <input type="time" required value={form.openingTime}
                                         onChange={(e) => set('openingTime', e.target.value)} className={inputCls} />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">وقت الإغلاق</label>
+                                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">{d.lblClose}</label>
                                     <input type="time" required value={form.closingTime}
                                         onChange={(e) => set('closingTime', e.target.value)} className={inputCls} />
                                 </div>
@@ -435,18 +503,18 @@ export function CreateFieldPage() {
                             {/* Amenities */}
                             <div className="space-y-4">
                                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                    <Building size={16} className="text-slate-500" /> المرافق والخدمات المتاحة
+                                    <Building size={16} className="text-slate-500" /> {d.lblAmenities}
                                 </h3>
                                 <div className="flex flex-col gap-4 pt-1">
-                                    <AmenityCheck label="إضاءة كاشفة ليلية" checked={form.amenities.hasLight}
+                                    <AmenityCheck label={d.amLight} checked={form.amenities.hasLight}
                                         onChange={(v) => setForm(f => ({ ...f, amenities: { ...f.amenities, hasLight: v } }))} />
-                                    <AmenityCheck label="موقف سيارات آمن" checked={form.amenities.hasParking}
+                                    <AmenityCheck label={d.amPark} checked={form.amenities.hasParking}
                                         onChange={(v) => setForm(f => ({ ...f, amenities: { ...f.amenities, hasParking: v } }))} />
-                                    <AmenityCheck label="غرف تغيير ملابس" checked={form.amenities.hasChangingRooms}
+                                    <AmenityCheck label={d.amChange} checked={form.amenities.hasChangingRooms}
                                         onChange={(v) => setForm(f => ({ ...f, amenities: { ...f.amenities, hasChangingRooms: v } }))} />
-                                    <AmenityCheck label="حمامات ودش واستحمام" checked={form.amenities.hasShowers}
+                                    <AmenityCheck label={d.amShower} checked={form.amenities.hasShowers}
                                         onChange={(v) => setForm(f => ({ ...f, amenities: { ...f.amenities, hasShowers: v } }))} />
-                                    <AmenityCheck label="بوفيه / كافتيريا مشروبات" checked={form.amenities.hasCafeteria}
+                                    <AmenityCheck label={d.amCafe} checked={form.amenities.hasCafeteria}
                                         onChange={(v) => setForm(f => ({ ...f, amenities: { ...f.amenities, hasCafeteria: v } }))} />
                                 </div>
                             </div>

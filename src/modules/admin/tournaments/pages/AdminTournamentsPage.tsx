@@ -15,8 +15,106 @@ import {
   MapPin,
   Building
 } from 'lucide-react';
+import { useLanguage } from '../../../../core/context/LanguageContext';
+
+const DICT = {
+  ar: {
+    pageTitle: 'تقارير المنصة والبطولات',
+    pageSubtitle: 'مراقبة التحليلات والإيرادات والبطولات النشطة في الوقت الفعلي.',
+    tabReports: 'تقارير المنصة',
+    tabTournaments: 'البطولات',
+    errLoadData: 'فشل تحميل بيانات لوحة التحكم',
+    confirmDelete: 'هل أنت متأكد من حذف هذه البطولة؟',
+    errDelete: 'فشل حذف البطولة',
+    revTotal: 'إجمالي إيرادات المنصة',
+    usersTotal: 'إجمالي المستخدمين',
+    thisMonth: 'هذا الشهر',
+    bookingsTotal: 'إجمالي الحجوزات',
+    tournamentsTotal: 'إجمالي البطولات',
+    avgRating: 'متوسط تقييم الملاعب',
+    topFields: 'الملاعب الأفضل أداءً',
+    colFieldName: 'اسم الملعب',
+    colBookings: 'الحجوزات',
+    colRevenue: 'الإيرادات',
+    noFieldsData: 'لا تتوفر بيانات الملاعب.',
+    topOwners: 'أفضل الملاك',
+    colOwnerName: 'اسم المالك',
+    colFieldsCount: 'الملاعب',
+    noOwnersData: 'لا تتوفر بيانات الملاك.',
+    tournDirectory: 'دليل البطولات',
+    filterAll: 'الكل',
+    filterUpcoming: 'قادمة',
+    filterOngoing: 'جارية',
+    filterCompleted: 'مكتملة',
+    filterCancelled: 'ملغاة',
+    colTourn: 'البطولة',
+    colFieldOwner: 'الملعب / المالك',
+    colDateRange: 'التاريخ',
+    colTeamsRatio: 'الفرق',
+    colPrice: 'السعر',
+    colStatus: 'الحالة',
+    colActions: 'الإجراءات',
+    noTournFound: 'لم يتم العثور على بطولات',
+    tryAdjustFilter: 'جرب تعديل فلتر الحالة.',
+    deleteTourn: 'حذف البطولة',
+    unknown: 'غير معروف',
+    statusUpcoming: 'قادمة',
+    statusOngoing: 'جارية',
+    statusCompleted: 'مكتملة',
+    statusCancelled: 'ملغاة'
+  },
+  en: {
+    pageTitle: 'Platform Reports & Tournaments',
+    pageSubtitle: 'Monitor real-time analytics, revenue, and active tournaments.',
+    tabReports: 'Platform Reports',
+    tabTournaments: 'Tournaments',
+    errLoadData: 'Failed to load dashboard data',
+    confirmDelete: 'Are you sure you want to delete this tournament?',
+    errDelete: 'Failed to delete tournament',
+    revTotal: 'Total Platform Revenue',
+    usersTotal: 'Total Users',
+    thisMonth: 'this month',
+    bookingsTotal: 'Total Bookings',
+    tournamentsTotal: 'Total Tournaments',
+    avgRating: 'Avg Field Rating',
+    topFields: 'Top Performing Fields',
+    colFieldName: 'Field Name',
+    colBookings: 'Bookings',
+    colRevenue: 'Revenue',
+    noFieldsData: 'No fields data available.',
+    topOwners: 'Top Owners',
+    colOwnerName: 'Owner Name',
+    colFieldsCount: 'Fields',
+    noOwnersData: 'No owners data available.',
+    tournDirectory: 'Tournaments Directory',
+    filterAll: 'All',
+    filterUpcoming: 'Upcoming',
+    filterOngoing: 'Ongoing',
+    filterCompleted: 'Completed',
+    filterCancelled: 'Cancelled',
+    colTourn: 'Tournament',
+    colFieldOwner: 'Field / Owner',
+    colDateRange: 'Date Range',
+    colTeamsRatio: 'Teams Ratio',
+    colPrice: 'Price',
+    colStatus: 'Status',
+    colActions: 'Actions',
+    noTournFound: 'No tournaments found',
+    tryAdjustFilter: 'Try adjusting your status filter.',
+    deleteTourn: 'Delete Tournament',
+    unknown: 'Unknown',
+    statusUpcoming: 'Upcoming',
+    statusOngoing: 'Ongoing',
+    statusCompleted: 'Completed',
+    statusCancelled: 'Cancelled'
+  }
+};
 
 export default function AdminTournamentsPage() {
+  const { lang } = useLanguage();
+  const d = DICT[lang];
+  const isAr = lang === 'ar';
+  
   const [activeTab, setActiveTab] = useState<'reports' | 'tournaments'>('reports');
   const [tournaments, setTournaments] = useState<AdminTournamentItem[]>([]);
   const [report, setReport] = useState<PlatformReportResponse | null>(null);
@@ -36,7 +134,7 @@ export default function AdminTournamentsPage() {
       setReport(reportData || null);
     } catch (err: any) {
       console.error('Error fetching admin dashboard data:', err);
-      setError(err.message || 'Failed to load dashboard data');
+      setError(err.message || d.errLoadData);
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +145,7 @@ export default function AdminTournamentsPage() {
   }, [statusFilter]);
 
   const handleDeleteTournament = async (tournamentId: number) => {
-    if (!window.confirm('Are you sure you want to delete this tournament?')) return;
+    if (!window.confirm(d.confirmDelete)) return;
     
     try {
       await adminTournamentsApi.deleteTournament(tournamentId);
@@ -55,16 +153,16 @@ export default function AdminTournamentsPage() {
       setTournaments(prev => prev.filter(t => t.id !== tournamentId));
     } catch (err) {
       console.error('Error deleting tournament:', err);
-      alert('Failed to delete tournament');
+      alert(d.errDelete);
     }
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-6 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Platform Reports & Tournaments</h1>
-          <p className="text-slate-500 mt-1">Monitor real-time analytics, revenue, and active tournaments.</p>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">{d.pageTitle}</h1>
+          <p className="text-slate-500 mt-1">{d.pageSubtitle}</p>
         </div>
         
         {/* Navigation Tabs */}
@@ -78,7 +176,7 @@ export default function AdminTournamentsPage() {
             }`}
           >
             <Activity size={18} />
-            Platform Reports
+            {d.tabReports}
           </button>
           <button
             onClick={() => setActiveTab('tournaments')}
@@ -89,7 +187,7 @@ export default function AdminTournamentsPage() {
             }`}
           >
             <Trophy size={18} />
-            Tournaments
+            {d.tabTournaments}
           </button>
         </div>
       </div>
@@ -117,29 +215,29 @@ export default function AdminTournamentsPage() {
               {/* Stats Widgets Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatCard 
-                  title="Total Platform Revenue" 
+                  title={d.revTotal} 
                   value={`${report?.totalPlatformRevenue?.toLocaleString() ?? 0} EGP`} 
                   icon={<DollarSign className="text-emerald-500" size={24} />}
                 />
                 <StatCard 
-                  title="Total Users" 
+                  title={d.usersTotal} 
                   value={report?.totalUsers?.toLocaleString() ?? 0} 
                   icon={<Users className="text-blue-500" size={24} />}
-                  trend={`+${report?.newUsersThisMonth ?? 0} this month`}
+                  trend={`+${report?.newUsersThisMonth ?? 0} ${d.thisMonth}`}
                   trendUp={true}
                 />
                 <StatCard 
-                  title="Total Bookings" 
+                  title={d.bookingsTotal} 
                   value={report?.totalBookingsAllTime?.toLocaleString() ?? 0} 
                   icon={<CalendarCheck className="text-indigo-500" size={24} />}
                 />
                 <StatCard 
-                  title="Total Tournaments" 
+                  title={d.tournamentsTotal} 
                   value={report?.totalTournamentsAllTime?.toLocaleString() ?? 0} 
                   icon={<Trophy className="text-orange-500" size={24} />}
                 />
                 <StatCard 
-                  title="Avg Field Rating" 
+                  title={d.avgRating} 
                   value={`${report?.averageFieldRating?.toFixed(1) ?? '0.0'} / 5.0`} 
                   icon={<Star className="text-amber-400" size={24} />}
                 />
@@ -147,30 +245,29 @@ export default function AdminTournamentsPage() {
 
               {/* Data Tables for Fields & Owners */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Top Fields */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                   <div className="p-5 border-b border-slate-100 flex items-center gap-2">
                     <MapPin className="text-indigo-500" size={20} />
-                    <h2 className="text-lg font-semibold text-slate-800">Top Performing Fields</h2>
+                    <h2 className="text-lg font-semibold text-slate-800">{d.topFields}</h2>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
                       <thead className="bg-slate-50/50">
                         <tr>
-                          <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Field Name</th>
-                          <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Bookings</th>
-                          <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Revenue</th>
+                          <th className={`p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider ${isAr ? 'text-right' : ''}`}>{d.colFieldName}</th>
+                          <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">{d.colBookings}</th>
+                          <th className={`p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider ${isAr ? 'text-left' : 'text-right'}`}>{d.colRevenue}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {(report?.topFields ?? []).length === 0 ? (
-                          <tr><td colSpan={3} className="p-8 text-center text-slate-400 text-sm">No fields data available.</td></tr>
+                          <tr><td colSpan={3} className="p-8 text-center text-slate-400 text-sm">{d.noFieldsData}</td></tr>
                         ) : (
                           report!.topFields.map((field, idx) => (
                             <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="p-4 font-medium text-slate-800">{field.name ?? 'Unknown'}</td>
+                              <td className={`p-4 font-medium text-slate-800 ${isAr ? 'text-right' : ''}`}>{field.name ?? d.unknown}</td>
                               <td className="p-4 text-center text-slate-600 font-medium">{field.bookingsCount ?? 0}</td>
-                              <td className="p-4 text-right text-emerald-600 font-semibold">{field.revenue?.toLocaleString() ?? 0} EGP</td>
+                              <td className={`p-4 text-emerald-600 font-semibold ${isAr ? 'text-left' : 'text-right'}`}>{field.revenue?.toLocaleString() ?? 0} EGP</td>
                             </tr>
                           ))
                         )}
@@ -179,30 +276,29 @@ export default function AdminTournamentsPage() {
                   </div>
                 </div>
 
-                {/* Top Owners */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                   <div className="p-5 border-b border-slate-100 flex items-center gap-2">
                     <Building className="text-blue-500" size={20} />
-                    <h2 className="text-lg font-semibold text-slate-800">Top Owners</h2>
+                    <h2 className="text-lg font-semibold text-slate-800">{d.topOwners}</h2>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
                       <thead className="bg-slate-50/50">
                         <tr>
-                          <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Owner Name</th>
-                          <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Fields</th>
-                          <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Revenue</th>
+                          <th className={`p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider ${isAr ? 'text-right' : ''}`}>{d.colOwnerName}</th>
+                          <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">{d.colFieldsCount}</th>
+                          <th className={`p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider ${isAr ? 'text-left' : 'text-right'}`}>{d.colRevenue}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {(report?.topOwners ?? []).length === 0 ? (
-                          <tr><td colSpan={3} className="p-8 text-center text-slate-400 text-sm">No owners data available.</td></tr>
+                          <tr><td colSpan={3} className="p-8 text-center text-slate-400 text-sm">{d.noOwnersData}</td></tr>
                         ) : (
                           report!.topOwners.map((owner, idx) => (
                             <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="p-4 font-medium text-slate-800">{owner.ownerName ?? 'Unknown'}</td>
+                              <td className={`p-4 font-medium text-slate-800 ${isAr ? 'text-right' : ''}`}>{owner.ownerName ?? d.unknown}</td>
                               <td className="p-4 text-center text-slate-600 font-medium">{owner.fieldsCount ?? 0}</td>
-                              <td className="p-4 text-right text-emerald-600 font-semibold">{owner.totalRevenue?.toLocaleString() ?? 0} EGP</td>
+                              <td className={`p-4 text-emerald-600 font-semibold ${isAr ? 'text-left' : 'text-right'}`}>{owner.totalRevenue?.toLocaleString() ?? 0} EGP</td>
                             </tr>
                           ))
                         )}
@@ -224,21 +320,27 @@ export default function AdminTournamentsPage() {
           <div className="p-6 border-b border-slate-200 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-slate-50/50">
             <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
               <Trophy size={20} className="text-orange-500" />
-              Tournaments Directory
+              {d.tournDirectory}
             </h2>
             
             <div className="flex flex-wrap gap-2">
-              {['All', 'Upcoming', 'Ongoing', 'Completed', 'Cancelled'].map(status => (
+              {[
+                { val: 'All', label: d.filterAll },
+                { val: 'Upcoming', label: d.filterUpcoming },
+                { val: 'Ongoing', label: d.filterOngoing },
+                { val: 'Completed', label: d.filterCompleted },
+                { val: 'Cancelled', label: d.filterCancelled }
+              ].map(statusObj => (
                 <button
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
+                  key={statusObj.val}
+                  onClick={() => setStatusFilter(statusObj.val)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    statusFilter === status 
+                    statusFilter === statusObj.val 
                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 hover:bg-indigo-700' 
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
                   }`}
                 >
-                  {status}
+                  {statusObj.label}
                 </button>
               ))}
             </div>
@@ -246,15 +348,15 @@ export default function AdminTournamentsPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
+              <thead className={isAr ? 'text-right' : 'text-left'}>
                 <tr className="bg-white text-slate-500 text-sm border-b border-slate-200">
-                  <th className="p-4 pl-6 font-medium">Tournament</th>
-                  <th className="p-4 font-medium">Field / Owner</th>
-                  <th className="p-4 font-medium">Date Range</th>
-                  <th className="p-4 font-medium text-center">Teams Ratio</th>
-                  <th className="p-4 font-medium text-right">Price</th>
-                  <th className="p-4 font-medium text-center">Status</th>
-                  <th className="p-4 pr-6 font-medium text-right">Actions</th>
+                  <th className={`p-4 ${isAr ? 'pr-6' : 'pl-6'} font-medium`}>{d.colTourn}</th>
+                  <th className="p-4 font-medium">{d.colFieldOwner}</th>
+                  <th className="p-4 font-medium">{d.colDateRange}</th>
+                  <th className="p-4 font-medium text-center">{d.colTeamsRatio}</th>
+                  <th className={`p-4 font-medium ${isAr ? 'text-left' : 'text-right'}`}>{d.colPrice}</th>
+                  <th className="p-4 font-medium text-center">{d.colStatus}</th>
+                  <th className={`p-4 ${isAr ? 'pl-6' : 'pr-6'} font-medium ${isAr ? 'text-left' : 'text-right'}`}>{d.colActions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -272,16 +374,16 @@ export default function AdminTournamentsPage() {
                     <td colSpan={7} className="p-12 text-center text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <Trophy size={32} className="text-slate-300" />
-                        <p className="font-medium text-slate-600">No tournaments found</p>
-                        <p className="text-sm">Try adjusting your status filter.</p>
+                        <p className="font-medium text-slate-600">{d.noTournFound}</p>
+                        <p className="text-sm">{d.tryAdjustFilter}</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   tournaments.map((tournament) => (
-                    <tr key={tournament.id} className="hover:bg-slate-50/80 transition-colors group">
-                      <td className="p-4 pl-6">
-                        <p className="font-semibold text-slate-800">{tournament.name ?? 'Untitled'}</p>
+                    <tr key={tournament.id} className={`hover:bg-slate-50/80 transition-colors group ${isAr ? 'text-right' : 'text-left'}`}>
+                      <td className={`p-4 ${isAr ? 'pr-6' : 'pl-6'}`}>
+                        <p className="font-semibold text-slate-800">{tournament.name ?? d.unknown}</p>
                         <p className="text-xs text-slate-500 mt-0.5">ID: {tournament.id}</p>
                       </td>
                       <td className="p-4">
@@ -293,13 +395,13 @@ export default function AdminTournamentsPage() {
                           <div className="flex items-center gap-1.5">
                             <Calendar size={12} className="text-indigo-400" />
                             <span className="text-xs font-medium">
-                              {tournament.startDate ? new Date(tournament.startDate).toLocaleDateString() : '-'}
+                              {tournament.startDate ? new Date(tournament.startDate).toLocaleDateString(isAr ? 'ar-EG' : 'en-GB') : '-'}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <CalendarCheck size={12} className="text-slate-400" />
                             <span className="text-xs text-slate-500">
-                              {tournament.endDate ? new Date(tournament.endDate).toLocaleDateString() : '-'}
+                              {tournament.endDate ? new Date(tournament.endDate).toLocaleDateString(isAr ? 'ar-EG' : 'en-GB') : '-'}
                             </span>
                           </div>
                         </div>
@@ -309,17 +411,17 @@ export default function AdminTournamentsPage() {
                           {tournament.teamsJoined ?? 0} / {tournament.numberOfTeams ?? '-'}
                         </span>
                       </td>
-                      <td className="p-4 text-right font-semibold text-slate-700">
+                      <td className={`p-4 font-semibold text-slate-700 ${isAr ? 'text-left' : 'text-right'}`}>
                         {tournament.price?.toLocaleString() ?? 0} EGP
                       </td>
                       <td className="p-4 text-center">
-                        <StatusBadge status={tournament.status} />
+                        <StatusBadge status={tournament.status} dict={d} />
                       </td>
-                      <td className="p-4 pr-6 text-right">
+                      <td className={`p-4 ${isAr ? 'pl-6' : 'pr-6'} ${isAr ? 'text-left' : 'text-right'}`}>
                         <button
                           onClick={() => handleDeleteTournament(tournament.id)}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
-                          title="Delete Tournament"
+                          title={d.deleteTourn}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -357,7 +459,7 @@ function StatCard({ title, value, icon, trend, trendUp }: any) {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, dict }: { status: string, dict: any }) {
   const styles: Record<string, string> = {
     Upcoming: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     Ongoing: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -365,12 +467,20 @@ function StatusBadge({ status }: { status: string }) {
     Cancelled: 'bg-red-50 text-red-700 border-red-200'
   };
 
+  const labels: Record<string, string> = {
+    Upcoming: dict.statusUpcoming,
+    Ongoing: dict.statusOngoing,
+    Completed: dict.statusCompleted,
+    Cancelled: dict.statusCancelled
+  };
+
   const defaultStyle = 'bg-slate-50 text-slate-700 border-slate-200';
   const style = styles[status] || defaultStyle;
+  const label = labels[status] || status || dict.unknown;
 
   return (
     <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${style}`}>
-      {status || 'Unknown'}
+      {label}
     </span>
   );
 }

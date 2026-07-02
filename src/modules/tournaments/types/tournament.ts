@@ -58,6 +58,17 @@ export interface PlayerProfile {
   position?: string;
 }
 
+/** Shape returned by GET /api/players — used for the member-picker in Step 2 */
+export interface AvailablePlayer {
+  id: number;
+  firstName: string;
+  lastName: string;
+  username: string;
+  teamName: string | null;
+  position: string | null;
+  currentElo: number;
+}
+
 export interface TeamStanding {
   id: string;
   name: string;

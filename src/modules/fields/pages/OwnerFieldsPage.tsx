@@ -14,8 +14,11 @@ import {
     CalendarOff, ShieldAlert, Check
 } from 'lucide-react';
 
+import { useLanguage } from '../../../core/context/LanguageContext';
+
 export function OwnerFieldsPage() {
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [fields, setFields] = useState<Field[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -220,15 +223,15 @@ export function OwnerFieldsPage() {
     // ─── RENDER ──────────────────────────────────────────────────────────────
     
     return (
-        <div className="min-h-screen bg-[#f8fafc] font-sans pb-20" dir="rtl">
+        <div className="p-4 md:p-8">
             
             {/* Header Area */}
-            <div className="bg-white border-b border-slate-200 px-6 py-8">
+            <div className="bg-white border-b border-slate-200 px-6 py-8 rounded-2xl mb-8">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">إدارة ملاعبي</h1>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t('owner.fields.title')}</h1>
                         <p className="text-sm font-medium text-slate-500 mt-2">
-                            لوحة التحكم المركزية لإدارة ملاعبك، حظر المواعيد، ومتابعة حالتها.
+                            {t('owner.fields.subtitle')}
                         </p>
                     </div>
                     <button
@@ -236,7 +239,7 @@ export function OwnerFieldsPage() {
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] hover:-translate-y-0.5"
                     >
                         <Plus size={20} />
-                        <span>إضافة ملعب جديد</span>
+                        <span>{t('owner.fields.addNew')}</span>
                     </button>
                 </div>
             </div>
@@ -247,7 +250,7 @@ export function OwnerFieldsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-bold text-slate-500 mb-1">إجمالي الملاعب</p>
+                            <p className="text-sm font-bold text-slate-500 mb-1">{t('owner.fields.stats.total')}</p>
                             <h3 className="text-3xl font-black text-slate-900">{isLoading ? '-' : totalFields}</h3>
                         </div>
                         <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
@@ -256,7 +259,7 @@ export function OwnerFieldsPage() {
                     </div>
                     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-bold text-slate-500 mb-1">ملاعب نشطة وتعمل</p>
+                            <p className="text-sm font-bold text-slate-500 mb-1">{t('owner.fields.stats.active')}</p>
                             <h3 className="text-3xl font-black text-emerald-600">{isLoading ? '-' : activeFields}</h3>
                         </div>
                         <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
@@ -265,7 +268,7 @@ export function OwnerFieldsPage() {
                     </div>
                     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-bold text-slate-500 mb-1">في انتظار الموافقة</p>
+                            <p className="text-sm font-bold text-slate-500 mb-1">{t('owner.fields.stats.pending')}</p>
                             <h3 className="text-3xl font-black text-amber-600">{isLoading ? '-' : pendingFields}</h3>
                         </div>
                         <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
@@ -284,13 +287,13 @@ export function OwnerFieldsPage() {
                         <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Building size={32} className="text-slate-400" />
                         </div>
-                        <h3 className="text-xl font-black text-slate-800 mb-2">لا توجد ملاعب مسجلة</h3>
-                        <p className="text-slate-500 font-medium">ابدأ الآن وأضف ملعبك الأول لبدء استقبال الحجوزات.</p>
+                        <h3 className="text-xl font-black text-slate-800 mb-2">{t('owner.fields.empty.title')}</h3>
+                        <p className="text-slate-500 font-medium">{t('owner.fields.empty.subtitle')}</p>
                         <button
                             onClick={() => navigate('/owner/fields/create')}
                             className="mt-6 text-indigo-600 font-bold hover:text-indigo-700 underline underline-offset-4"
                         >
-                            أضف ملعبك الأول الآن
+                            {t('owner.fields.addFirst')}
                         </button>
                     </div>
                 ) : (
@@ -309,8 +312,8 @@ export function OwnerFieldsPage() {
                                     </div>
                                     <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-black text-slate-800 shadow-sm flex items-center gap-1.5">
                                         <Building size={14} className="text-indigo-600" />
-                                        {field.type === '5-a-side' || field.type === FieldType.FiveASide ? 'خماسي' : 
-                                         field.type === '7-a-side' || field.type === FieldType.SevenASide ? 'سباعي' : 'قانوني'}
+                                        {field.type === '5-a-side' || field.type === FieldType.FiveASide ? t('owner.fields.type.five') : 
+                                         field.type === '7-a-side' || field.type === FieldType.SevenASide ? t('owner.fields.type.seven') : t('owner.fields.type.eleven')}
                                     </div>
                                 </div>
 
@@ -320,7 +323,7 @@ export function OwnerFieldsPage() {
                                         <h3 className="text-lg font-black text-slate-900 line-clamp-1">{field.name}</h3>
                                         <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 whitespace-nowrap">
                                             <span className="text-indigo-700 font-black text-sm">{field.priceAm}</span>
-                                            <span className="text-slate-400 text-xs font-bold">ج.م/س</span>
+                                            <span className="text-slate-400 text-xs font-bold">{t('owner.fields.price.unit')}</span>
                                         </div>
                                     </div>
 
@@ -333,8 +336,8 @@ export function OwnerFieldsPage() {
                                     <div className="mt-auto pt-5 border-t border-slate-100 flex items-center justify-between">
                                         {/* Availability Toggle */}
                                         <div className="flex items-center gap-3">
-                                            <span className={`text-xs font-bold ${field.isAvailable ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                                {field.isAvailable ? 'متاح للحجز' : 'مغلق'}
+                                            <span className={`text-xs font-bold w-auto min-w-[4.5rem] px-1 text-center inline-block ${field.isAvailable ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                {field.isAvailable ? t('owner.fields.available') : t('owner.fields.closed')}
                                             </span>
                                             <button 
                                                 onClick={() => handleToggleAvailability(field)}
@@ -349,14 +352,14 @@ export function OwnerFieldsPage() {
                                             <button 
                                                 onClick={() => setFieldToBlock(field)}
                                                 className="w-9 h-9 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white transition-colors"
-                                                title="حظر مواعيد للصيانة"
+                                                title={t('owner.fields.action.blockSlots')}
                                             >
                                                 <CalendarOff size={16} />
                                             </button>
                                             <button 
                                                 onClick={() => setFieldToEdit(field)}
                                                 className="w-9 h-9 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors"
-                                                title="تعديل"
+                                                title={t('owner.fields.action.edit')}
                                             >
                                                 <Edit3 size={16} />
                                             </button>
@@ -364,7 +367,7 @@ export function OwnerFieldsPage() {
                                                 onClick={() => handleDeleteClick(field)}
                                                 disabled={isActionLoading}
                                                 className="w-9 h-9 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-colors disabled:opacity-50"
-                                                title="حذف"
+                                                title={t('owner.fields.action.delete')}
                                             >
                                                 {isActionLoading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={16} />}
                                             </button>
@@ -388,21 +391,21 @@ export function OwnerFieldsPage() {
                                 <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <ShieldAlert size={32} className="text-rose-600" />
                                 </div>
-                                <h3 className="text-xl font-black text-slate-900 mb-2 text-center">إجراء غير مصرح به</h3>
+                                <h3 className="text-xl font-black text-slate-900 mb-2 text-center">{t('owner.fields.modal.delete.blocked.title')}</h3>
                                 <p className="text-slate-600 text-sm font-medium mb-6 text-center leading-relaxed">
-                                    لا يمكنك حذف <strong>{deletionSafety.fieldName}</strong> حالياً لوجود التزامات قائمة:
+                                    {t('owner.fields.modal.delete.blocked.body')} <strong>{deletionSafety.fieldName}</strong>
                                 </p>
                                 <div className="bg-slate-50 rounded-xl p-4 space-y-3 mb-6">
                                     <div className="flex justify-between items-center text-sm font-bold">
-                                        <span className="text-slate-600">حجوزات قادمة</span>
+                                        <span className="text-slate-600">{t('owner.fields.modal.delete.blocked.upcomingBookings')}</span>
                                         <span className="text-rose-600">{deletionSafety.upcomingBookings}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm font-bold">
-                                        <span className="text-slate-600">دورات نشطة</span>
+                                        <span className="text-slate-600">{t('owner.fields.modal.delete.blocked.activeTournaments')}</span>
                                         <span className="text-rose-600">{deletionSafety.activeTournaments}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm font-bold">
-                                        <span className="text-slate-600">مدفوعات معلقة</span>
+                                        <span className="text-slate-600">{t('owner.fields.modal.delete.blocked.pendingPayments')}</span>
                                         <span className="text-rose-600">{deletionSafety.pendingPayments}</span>
                                     </div>
                                 </div>
@@ -410,7 +413,7 @@ export function OwnerFieldsPage() {
                                     onClick={() => { setDeletionSafety(null); setFieldToDelete(null); }}
                                     className="w-full py-3 rounded-xl font-bold text-white bg-slate-800 hover:bg-slate-900 transition-colors"
                                 >
-                                    حسناً، فهمت
+                                    {t('owner.fields.modal.delete.blocked.ok')}
                                 </button>
                             </>
                         ) : (
@@ -418,9 +421,9 @@ export function OwnerFieldsPage() {
                                 <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <AlertCircle size={32} className="text-amber-600" />
                                 </div>
-                                <h3 className="text-xl font-black text-slate-900 mb-2 text-center">تأكيد الحذف النهائي</h3>
+                                <h3 className="text-xl font-black text-slate-900 mb-2 text-center">{t('owner.fields.modal.delete.confirm.title')}</h3>
                                 <p className="text-slate-500 font-medium mb-8 text-center leading-relaxed">
-                                    الملعب فارغ من أي التزامات. هل أنت متأكد من رغبتك في حذف <strong>{deletionSafety.fieldName}</strong> نهائياً؟
+                                    {t('owner.fields.modal.delete.confirm.body')} <strong>{deletionSafety.fieldName}</strong>
                                 </p>
                                 <div className="flex gap-3">
                                     <button 
@@ -428,14 +431,14 @@ export function OwnerFieldsPage() {
                                         disabled={isActionLoading}
                                         className="flex-1 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
                                     >
-                                        إلغاء
+                                        {t('owner.fields.modal.edit.cancel')}
                                     </button>
                                     <button 
                                         onClick={confirmDeleteSecurely}
                                         disabled={isActionLoading}
                                         className="flex-1 py-3 rounded-xl font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors flex items-center justify-center gap-2"
                                     >
-                                        {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : 'حذف نهائي'}
+                                        {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : t('owner.fields.modal.delete.confirm.delete')}
                                     </button>
                                 </div>
                             </>
@@ -450,7 +453,7 @@ export function OwnerFieldsPage() {
                     <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in slide-in-from-bottom duration-300">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h3 className="text-lg font-black text-slate-900">حظر مواعيد الملعب</h3>
+                                <h3 className="text-lg font-black text-slate-900">{t('owner.fields.modal.block.title')}</h3>
                                 <p className="text-xs font-bold text-slate-500">{fieldToBlock.name}</p>
                             </div>
                             <button 
@@ -463,7 +466,7 @@ export function OwnerFieldsPage() {
 
                         <form onSubmit={handleBlockSlotsSubmit} className="space-y-5">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700">تاريخ الحظر</label>
+                                <label className="text-xs font-bold text-slate-700">{t('owner.fields.modal.block.dateLabel')}</label>
                                 <input 
                                     type="date" 
                                     required 
@@ -473,7 +476,7 @@ export function OwnerFieldsPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-700">المواعيد المراد حظرها (مفصولة بفاصلة)</label>
+                                <label className="text-xs font-bold text-slate-700">{t('owner.fields.modal.block.slotsLabel')}</label>
                                 <input 
                                     type="text" 
                                     required 
@@ -484,7 +487,7 @@ export function OwnerFieldsPage() {
                                     dir="ltr"
                                 />
                                 <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                                    أدخل المواعيد التي ترغب في إغلاقها عن الحجز، مثلاً للصيانة. سيتم إزالتها مؤقتاً من النظام في هذا اليوم.
+                                    {t('owner.fields.modal.block.slotsHint')}
                                 </p>
                             </div>
 
@@ -493,7 +496,7 @@ export function OwnerFieldsPage() {
                                 disabled={isActionLoading}
                                 className="w-full py-3.5 mt-2 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 transition-colors flex items-center justify-center gap-2"
                             >
-                                {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : <><CalendarOff size={18} /> تطبيق الحظر</>}
+                                {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : <><CalendarOff size={18} /> {t('owner.fields.modal.block.submit')}</>}
                             </button>
                         </form>
                     </div>
@@ -506,7 +509,7 @@ export function OwnerFieldsPage() {
                     <div className="bg-white w-full max-w-md h-full shadow-2xl animate-in slide-in-from-left duration-300 flex flex-col overflow-hidden">
                         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                             <div>
-                                <h3 className="text-lg font-black text-slate-900">تعديل بيانات الملعب</h3>
+                                <h3 className="text-lg font-black text-slate-900">{t('owner.fields.modal.edit.title')}</h3>
                                 <p className="text-xs font-bold text-slate-500">{fieldToEdit.name}</p>
                             </div>
                             <button onClick={() => setFieldToEdit(null)} className="p-2 rounded-lg hover:bg-slate-200 text-slate-500 transition-colors">
@@ -517,33 +520,33 @@ export function OwnerFieldsPage() {
                         <div className="flex-1 overflow-y-auto p-6">
                             <form id="edit-form" onSubmit={handleEditSubmit} className="space-y-5">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-700">اسم الملعب</label>
+                                <label className="text-xs font-bold text-slate-700">{t('owner.fields.modal.edit.name')}</label>
                                     <input type="text" required value={fieldToEdit.name} onChange={e => setFieldToEdit({...fieldToEdit, name: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-700">سعر الصباح</label>
+                                        <label className="text-xs font-bold text-slate-700">{t('owner.fields.modal.edit.priceAm')}</label>
                                         <input type="number" required value={fieldToEdit.priceAm} onChange={e => setFieldToEdit({...fieldToEdit, priceAm: Number(e.target.value)})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-700">سعر المساء</label>
+                                        <label className="text-xs font-bold text-slate-700">{t('owner.fields.modal.edit.pricePm')}</label>
                                         <input type="number" required value={fieldToEdit.pricePm} onChange={e => setFieldToEdit({...fieldToEdit, pricePm: Number(e.target.value)})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-700">وقت الفتح</label>
+                                        <label className="text-xs font-bold text-slate-700">{t('owner.fields.modal.edit.openTime')}</label>
                                         <input type="time" required value={fieldToEdit.openingTime || '08:00'} onChange={e => setFieldToEdit({...fieldToEdit, openingTime: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-700">وقت الإغلاق</label>
+                                        <label className="text-xs font-bold text-slate-700">{t('owner.fields.modal.edit.closeTime')}</label>
                                         <input type="time" required value={fieldToEdit.closingTime || '23:00'} onChange={e => setFieldToEdit({...fieldToEdit, closingTime: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-700">المدينة</label>
+                                <label className="text-xs font-bold text-slate-700">{t('owner.fields.modal.edit.city')}</label>
                                     <input type="text" required value={fieldToEdit.city} onChange={e => setFieldToEdit({...fieldToEdit, city: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-700">العنوان</label>
+                                <label className="text-xs font-bold text-slate-700">{t('owner.fields.modal.edit.address')}</label>
                                     <input type="text" required value={fieldToEdit.address} onChange={e => setFieldToEdit({...fieldToEdit, address: e.target.value})} className="w-full text-sm font-semibold px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-slate-50" />
                                 </div>
                             </form>
@@ -551,10 +554,10 @@ export function OwnerFieldsPage() {
 
                         <div className="p-6 border-t border-slate-100 bg-slate-50 flex gap-3">
                             <button onClick={() => setFieldToEdit(null)} disabled={isActionLoading} className="flex-1 py-3.5 rounded-xl font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 transition-colors">
-                                إلغاء
+                                {t('owner.fields.modal.edit.cancel')}
                             </button>
                             <button type="submit" form="edit-form" disabled={isActionLoading} className="flex-1 py-3.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
-                                {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : <><Save size={18} /> حفظ التعديلات</>}
+                                {isActionLoading ? <Loader2 size={18} className="animate-spin" /> : <><Save size={18} /> {t('owner.fields.modal.edit.save')}</>}
                             </button>
                         </div>
                     </div>

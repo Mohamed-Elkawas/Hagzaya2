@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
+  ArrowLeft,
   Trophy,
   Users,
   CalendarDays,
@@ -27,46 +28,127 @@ import {
 import { GroupTable } from '../components/GroupTable';
 import { BracketView } from '../components/BracketView';
 import { MatchCard } from '../components/MatchCard';
-import { RegisterFormModal } from '../components/RegisterFormModal';
 import { tournamentsApi } from '../api/api';
 import { useTournamentState } from '../hooks/useTournamentState';
 import type { Tournament } from '../types/tournament';
 import { TournamentStatus, UserRole, MatchStatus } from '../types/tournament';
+import { useLanguage } from '../../../core/context/LanguageContext';
+
+// ── Bilingual Dictionary ───────────────────────────────────────────────────────
+const DICT = {
+  tournamentDetails: { ar: 'تفاصيل البطولة',       en: 'Tournament Details' },
+  organizer:         { ar: 'المنظم',              en: 'Organizer' },
+  prizePool:         { ar: 'قيمة الجائزة',        en: 'Prize Pool' },
+  entryFee:          { ar: 'رسوم الاشتراك',       en: 'Entry Fee' },
+  registeredTeams:   { ar: 'الفرق المشتركة',      en: 'Registered Teams' },
+  rulesRegs:         { ar: 'شروط وقوانين البطولة',en: 'Rules & Regulations' },
+  aboutTourney:      { ar: 'عن البطولة',          en: 'About the Tournament' },
+  joinNow:           { ar: 'اشترك الآن',          en: 'Join Tournament Now' },
+  fullStatus:        { ar: 'مكتملة',              en: 'Full / Completed' },
+  openStatus:        { ar: 'متاحة',               en: 'Open / Available' },
+  ongoingStatus:     { ar: 'جارية الآن 🔴',       en: 'Ongoing 🔴' },
+  finishedStatus:    { ar: 'منتهية',              en: 'Finished' },
+  cancelledStatus:   { ar: 'ملغية',               en: 'Cancelled' },
+  
+  // Tabs
+  tabOverview:       { ar: 'نظرة عامة',           en: 'Overview' },
+  tabGroups:         { ar: 'المجموعات',           en: 'Groups' },
+  tabBracket:        { ar: 'الكأس',               en: 'Bracket' },
+  tabMatches:        { ar: 'المباريات',           en: 'Matches' },
+  tabAdmin:          { ar: 'لوحة التحكم',         en: 'Admin Panel' },
+  
+  // Overview Tab
+  startDate:         { ar: 'تاريخ البداية',       en: 'Start Date' },
+  endDate:           { ar: 'تاريخ النهاية',       en: 'End Date' },
+  noDesc:            { ar: 'لا توجد تفاصيل إضافية لهذه البطولة.', en: 'No additional details for this tournament.' },
+  regProgress:       { ar: 'تقدم التسجيل',        en: 'Registration Progress' },
+  seatsLeft:         { ar: 'مقعد متبقي',          en: 'seats left' },
+  teamRegistered:    { ar: 'فريق مسجل',           en: 'registered teams' },
+  tourneyRewards:    { ar: 'جوائز البطولة',       en: 'Tournament Rewards' },
+  firstPlace:        { ar: '🥇 المركز الأول',     en: '🥇 First Place' },
+  secondPlace:       { ar: '🥈 المركز الثاني',    en: '🥈 Second Place' },
+  thirdPlace:        { ar: '🥉 المركز الثالث',    en: '🥉 Third Place' },
+  bestPlayer:        { ar: 'أفضل لاعب:',          en: 'Best Player:' },
+  bestGK:            { ar: 'أفضل حارس مرمى:',     en: 'Best Goalkeeper:' },
+  
+  // Status config
+  statusUpcoming:    { ar: 'مفتوحة للتسجيل',      en: 'Open for Registration' },
+
+  // Matches Tab
+  noMatches:         { ar: 'لا توجد مباريات مجدولة', en: 'No scheduled matches' },
+  noMatchesSub:      { ar: 'ستظهر المباريات بعد إجراء القرعة', en: 'Matches will appear after the draw' },
+  liveMatches:       { ar: 'هناك مباريات تُلعب الآن!', en: 'There are live matches playing now!' },
+  stageAll:          { ar: 'الكل',                en: 'All' },
+  
+  // Admin Panel
+  unauthorized:      { ar: 'غير مصرح',            en: 'Unauthorized' },
+  unauthorizedSub:   { ar: 'هذه اللوحة مخصصة للمالك والمسؤول فقط', en: 'This panel is for Owner and Admin only' },
+  adminPanelOwner:   { ar: 'لوحة تحكم المالك',    en: 'Owner Panel' },
+  adminPanelAdmin:   { ar: 'لوحة تحكم المسؤول',   en: 'Admin Panel' },
+  adminSub:          { ar: 'إدارة البطولة، المكافآت، والإعدادات المتقدمة', en: 'Manage tournament, rewards, and advanced settings' },
+  editTourney:       { ar: 'تعديل البطولة',       en: 'Edit Tournament' },
+  manageTeams:       { ar: 'إدارة الفرق',         en: 'Manage Teams' },
+  doDraw:            { ar: 'إجراء القرعة',        en: 'Conduct Draw' },
+  matchSchedule:     { ar: 'جدول المباريات',      en: 'Match Schedule' },
+  deleteTourney:     { ar: 'حذف البطولة',         en: 'Delete Tournament' },
+  setRewards:        { ar: 'تحديد جوائز البطولة', en: 'Set Tournament Rewards' },
+  saveRewards:       { ar: 'حفظ الجوائز',         en: 'Save Rewards' },
+  rewardsSaved:      { ar: 'تم حفظ الجوائز بنجاح!', en: 'Rewards saved successfully!' },
+  accepted:          { ar: 'مقبول',               en: 'Accepted' },
+  noTeamsYet:        { ar: 'لا توجد فرق مسجلة بعد', en: 'No registered teams yet' },
+
+  // Loading / Error
+  loadingDetail:     { ar: 'جار تحميل تفاصيل البطولة...', en: 'Loading tournament details...' },
+  notFound:          { ar: '⚠️ البطولة غير موجودة', en: '⚠️ Tournament not found' },
+  backToList:        { ar: 'العودة للقائمة',      en: 'Back to list' },
+  backToTourneys:    { ar: 'العودة للبطولات',     en: 'Back to Tournaments' },
+  teamSuffix:        { ar: 'فريق',                en: 'Teams' },
+} as const;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(iso: string) {
+function formatDate(iso: string, lang: 'ar' | 'en') {
   try {
-    return new Date(iso).toLocaleDateString('ar-EG', {
+    return new Date(iso).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', {
       day: 'numeric', month: 'long', year: 'numeric',
     });
   } catch { return iso; }
 }
 
-const STATUS_CONFIG: Record<TournamentStatus, { label: string; color: string; bg: string }> = {
-  [TournamentStatus.Upcoming]: { label: 'مفتوحة للتسجيل', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-300' },
-  [TournamentStatus.Ongoing]:  { label: 'جارية الآن 🔴',   color: 'text-red-600',     bg: 'bg-red-50 border-red-300' },
-  [TournamentStatus.Finished]: { label: 'منتهية',          color: 'text-slate-500',   bg: 'bg-slate-100 border-slate-300' },
-  [TournamentStatus.Cancelled]:{ label: 'ملغية',           color: 'text-red-400',     bg: 'bg-red-50 border-red-200' },
-};
-
 type TabId = 'overview' | 'groups' | 'bracket' | 'matches' | 'admin';
 
-const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
-  { id: 'overview', label: 'نظرة عامة', icon: <BarChart3 className="w-3.5 h-3.5" /> },
-  { id: 'groups',   label: 'المجموعات',  icon: <Layers className="w-3.5 h-3.5" /> },
-  { id: 'bracket',  label: 'الكأس',      icon: <Trophy className="w-3.5 h-3.5" /> },
-  { id: 'matches',  label: 'المباريات',  icon: <Shield className="w-3.5 h-3.5" /> },
-  { id: 'admin',    label: 'لوحة التحكم', icon: <Settings className="w-3.5 h-3.5" /> },
-];
+function translateStage(stage: string, lang: 'ar' | 'en'): string {
+    const mapEnToAr: Record<string, string> = {
+        Group: 'دور المجموعات', RoundOf16: 'دور الـ 16',
+        QuarterFinal: 'ربع النهائي', SemiFinal: 'نصف النهائي', Final: 'النهائي',
+    };
+    if (lang === 'ar') return mapEnToAr[stage] || stage;
+    return stage; // Default English from backend usually
+}
+
+function translateFieldType(type: unknown, lang: 'ar' | 'en'): string {
+    if (typeof type !== 'string') return '';
+    if (type.includes('5') || type === 'خماسي') return lang === 'ar' ? 'خماسي' : '5-A-Side';
+    if (type.includes('7') || type === 'سباعي') return lang === 'ar' ? 'سباعي' : '7-A-Side';
+    if (type.includes('11') || type.includes('قانوني')) return lang === 'ar' ? 'قانوني (11)' : 'Legal Size (11-A-Side)';
+    return type;
+}
 
 // ── Overview Tab ─────────────────────────────────────────────────────────────
 
-function OverviewTab({ tournament }: { tournament: Tournament }) {
+function OverviewTab({ tournament, lang }: { tournament: Tournament; lang: 'ar' | 'en' }) {
+  const d = (key: keyof typeof DICT) => DICT[key][lang];
   const progress = Math.min(100, Math.round(
     (tournament.registeredTeamsCount / tournament.numberOfTeams) * 100
   ));
   const isFull = tournament.registeredTeamsCount >= tournament.numberOfTeams;
+
+  const STATUS_CONFIG: Record<TournamentStatus, { label: string; color: string; bg: string }> = {
+    [TournamentStatus.Upcoming]: { label: d('statusUpcoming'), color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-300' },
+    [TournamentStatus.Ongoing]:  { label: d('ongoingStatus'),  color: 'text-red-600',     bg: 'bg-red-50 border-red-300' },
+    [TournamentStatus.Finished]: { label: d('finishedStatus'), color: 'text-slate-500',   bg: 'bg-slate-100 border-slate-300' },
+    [TournamentStatus.Cancelled]:{ label: d('cancelledStatus'),color: 'text-red-400',     bg: 'bg-red-50 border-red-200' },
+  };
   const config = STATUS_CONFIG[tournament.status] ?? STATUS_CONFIG[TournamentStatus.Upcoming];
 
   return (
@@ -74,10 +156,10 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { icon: <Users className="w-5 h-5 text-primary" />, label: 'الفرق المسجلة', value: `${tournament.registeredTeamsCount}/${tournament.numberOfTeams}` },
-          { icon: <Trophy className="w-5 h-5 text-amber-500" />, label: 'الجائزة الكبرى', value: tournament.prize },
-          { icon: <CalendarDays className="w-5 h-5 text-blue-500" />, label: 'تاريخ البداية', value: formatDate(tournament.startDate) },
-          { icon: <CalendarDays className="w-5 h-5 text-purple-500" />, label: 'تاريخ النهاية', value: formatDate(tournament.endDate) },
+          { icon: <Users className="w-5 h-5 text-primary" />, label: d('registeredTeams'), value: `${tournament.registeredTeamsCount}/${tournament.numberOfTeams}` },
+          { icon: <Trophy className="w-5 h-5 text-amber-500" />, label: d('prizePool'), value: tournament.prize },
+          { icon: <CalendarDays className="w-5 h-5 text-blue-500" />, label: d('startDate'), value: formatDate(tournament.startDate, lang) },
+          { icon: <CalendarDays className="w-5 h-5 text-purple-500" />, label: d('endDate'), value: formatDate(tournament.endDate, lang) },
         ].map((stat, i) => (
           <div key={i} className="bg-white rounded-2xl border border-[#e1e3e1] p-4 flex flex-col items-start gap-2 shadow-sm">
             <div className="w-9 h-9 rounded-xl bg-[#f6f8f7] flex items-center justify-center">
@@ -94,25 +176,25 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
       {/* Description */}
       <div className="bg-white rounded-2xl border border-[#e1e3e1] p-5 shadow-sm">
         <h3 className="font-bold text-[#191c1c] mb-2 text-sm flex items-center gap-2">
-          <Shield className="w-4 h-4 text-primary" /> نبذة عن البطولة
+          <Shield className="w-4 h-4 text-primary" /> {d('aboutTourney')}
         </h3>
         <p className="text-sm text-on-surface-variant leading-relaxed">
-          {tournament.description || 'لا توجد تفاصيل إضافية لهذه البطولة.'}
+          {tournament.description || d('noDesc')}
         </p>
       </div>
 
       {/* Registration Progress */}
       <div className="bg-white rounded-2xl border border-[#e1e3e1] p-5 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-[#191c1c] text-sm">تقدم التسجيل</h3>
+          <h3 className="font-bold text-[#191c1c] text-sm">{d('regProgress')}</h3>
           <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${config.bg} ${config.color}`}>
             {config.label}
           </span>
         </div>
         <div className="flex items-center justify-between text-xs font-semibold text-on-surface-variant">
-          <span>{tournament.registeredTeamsCount} فريق مسجل</span>
+          <span>{tournament.registeredTeamsCount} {d('teamRegistered')}</span>
           <span className={isFull ? 'text-red-500' : 'text-primary'}>
-            {isFull ? 'مكتمل' : `${progress}%`}
+            {isFull ? d('fullStatus') : `${progress}%`}
           </span>
         </div>
         <div className="w-full bg-[#e8ede9] h-3 rounded-full overflow-hidden">
@@ -124,7 +206,7 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
           />
         </div>
         <p className="text-[11px] text-on-surface-variant/60">
-          {tournament.numberOfTeams - tournament.registeredTeamsCount} مقعد متبقي
+          {tournament.numberOfTeams - tournament.registeredTeamsCount} {d('seatsLeft')}
         </p>
       </div>
 
@@ -132,13 +214,13 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
       {tournament.rewards && (
         <div className="bg-linear-to-br from-amber-50 to-yellow-50 rounded-2xl border border-amber-200 p-5 shadow-sm">
           <h3 className="font-bold text-[#191c1c] mb-4 text-sm flex items-center gap-2">
-            <Award className="w-4 h-4 text-amber-500" /> جوائز البطولة
+            <Award className="w-4 h-4 text-amber-500" /> {d('tourneyRewards')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
-              { place: '🥇 المركز الأول', value: tournament.rewards.firstPlace },
-              { place: '🥈 المركز الثاني', value: tournament.rewards.secondPlace },
-              { place: '🥉 المركز الثالث', value: tournament.rewards.thirdPlace },
+              { place: d('firstPlace'), value: tournament.rewards.firstPlace },
+              { place: d('secondPlace'), value: tournament.rewards.secondPlace },
+              { place: d('thirdPlace'), value: tournament.rewards.thirdPlace },
             ].filter(r => r.value).map((r) => (
               <div key={r.place} className="bg-white rounded-xl p-3 text-center border border-amber-200">
                 <p className="text-xs font-bold text-on-surface-variant">{r.place}</p>
@@ -149,7 +231,7 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
           {tournament.rewards.theBestPlayer && (
             <div className="mt-3 flex items-center gap-2 bg-white rounded-xl p-3 border border-amber-200">
               <Award className="w-4 h-4 text-purple-500" />
-              <span className="text-xs font-bold text-on-surface-variant">أفضل لاعب:</span>
+              <span className="text-xs font-bold text-on-surface-variant">{d('bestPlayer')}</span>
               <span className="text-xs font-black text-purple-600">{tournament.rewards.theBestPlayer}</span>
             </div>
           )}
@@ -159,14 +241,14 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
       {/* Rules */}
       <div className="bg-white rounded-2xl border border-[#e1e3e1] p-5 shadow-sm">
         <h3 className="font-bold text-[#191c1c] mb-3 text-sm flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-primary" /> قواعد البطولة
+          <CheckCircle2 className="w-4 h-4 text-primary" /> {d('rulesRegs')}
         </h3>
         <ul className="space-y-2">
           {[
-            'كل مجموعة تحتوي على 4 فرق — أعلى فريقين يتأهلان',
-            'ترتيب المجموعات: النقاط → فارق الأهداف → التشابك المباشر',
-            'لا تعادل في الدور الإقصائي — وقت إضافي ثم ركلات الترجيح',
-            'رسوم التسجيل: ' + tournament.price + ' جنيه لكل فريق',
+            lang === 'ar' ? 'كل مجموعة تحتوي على 4 فرق — أعلى فريقين يتأهلان' : 'Each group has 4 teams — top 2 qualify',
+            lang === 'ar' ? 'ترتيب المجموعات: النقاط → فارق الأهداف → التشابك المباشر' : 'Group Standings: Points → Goal Difference → Head-to-Head',
+            lang === 'ar' ? 'لا تعادل في الدور الإقصائي — وقت إضافي ثم ركلات الترجيح' : 'No draws in knockout — extra time then penalties',
+            (lang === 'ar' ? 'رسوم التسجيل: ' : 'Registration Fee: ') + tournament.price + (lang === 'ar' ? ' جنيه لكل فريق' : ' EGP per team'),
           ].map((rule, i) => (
             <li key={i} className="flex items-start gap-2 text-sm text-on-surface-variant">
               <span className="w-4 h-4 bg-[#e8f5e9] rounded-full flex items-center justify-center text-primary shrink-0 mt-0.5">
@@ -183,16 +265,16 @@ function OverviewTab({ tournament }: { tournament: Tournament }) {
 
 // ── Groups Tab ────────────────────────────────────────────────────────────────
 
-function GroupsTab({ tournament }: { tournament: Tournament }) {
+function GroupsTab({ tournament, lang }: { tournament: Tournament; lang: 'ar' | 'en' }) {
   if (!tournament.groups || tournament.groups.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
         <div className="w-14 h-14 bg-[#f0f2f0] rounded-full flex items-center justify-center">
           <Layers className="w-7 h-7 text-on-surface-variant/40" />
         </div>
-        <p className="text-sm font-bold text-[#191c1c]">المجموعات</p>
+        <p className="text-sm font-bold text-[#191c1c]">{lang === 'ar' ? 'المجموعات' : 'Groups'}</p>
         <p className="text-xs text-on-surface-variant/60 max-w-xs">
-          سيتم تحديد المجموعات بعد اكتمال التسجيل وإجراء القرعة.
+          {lang === 'ar' ? 'سيتم تحديد المجموعات بعد اكتمال التسجيل وإجراء القرعة.' : 'Groups will be determined after registration and draw.'}
         </p>
       </div>
     );
@@ -211,10 +293,13 @@ function GroupsTab({ tournament }: { tournament: Tournament }) {
 function MatchesTab({
   tournament,
   currentRole,
+  lang,
 }: {
   tournament: Tournament;
   currentRole: UserRole;
+  lang: 'ar' | 'en';
 }) {
+  const d = (key: keyof typeof DICT) => DICT[key][lang];
   const [filterStage, setFilterStage] = useState<string>('All');
   const matches = tournament.matches ?? [];
 
@@ -225,19 +310,14 @@ function MatchesTab({
       ? matches
       : matches.filter((m) => m.stage === filterStage);
 
-  const STAGE_LABELS: Record<string, string> = {
-    Group: 'دور المجموعات', RoundOf16: 'دور الـ 16',
-    QuarterFinal: 'ربع النهائي', SemiFinal: 'نصف النهائي', Final: 'النهائي',
-  };
-
   if (matches.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
         <div className="w-14 h-14 bg-[#f0f2f0] rounded-full flex items-center justify-center">
           <Clock className="w-7 h-7 text-on-surface-variant/40" />
         </div>
-        <p className="text-sm font-bold text-[#191c1c]">لا توجد مباريات مجدولة</p>
-        <p className="text-xs text-on-surface-variant/60">ستظهر المباريات بعد إجراء القرعة</p>
+        <p className="text-sm font-bold text-[#191c1c]">{d('noMatches')}</p>
+        <p className="text-xs text-on-surface-variant/60">{d('noMatchesSub')}</p>
       </div>
     );
   }
@@ -256,7 +336,7 @@ function MatchesTab({
                 : 'bg-white border border-[#e1e3e1] text-on-surface-variant hover:bg-[#f0f2f0]'
             }`}
           >
-            {stage === 'All' ? 'الكل' : STAGE_LABELS[stage] ?? stage}
+            {stage === 'All' ? d('stageAll') : translateStage(stage, lang)}
           </button>
         ))}
       </div>
@@ -265,7 +345,7 @@ function MatchesTab({
       {filtered.some((m) => m.status === MatchStatus.Live) && (
         <div className="bg-red-500 rounded-xl px-4 py-2.5 flex items-center gap-2">
           <Zap className="w-4 h-4 text-white" />
-          <span className="text-white text-xs font-bold">هناك مباريات تُلعب الآن!</span>
+          <span className="text-white text-xs font-bold">{d('liveMatches')}</span>
           <span className="w-2 h-2 bg-white rounded-full animate-pulse ms-1" />
         </div>
       )}
@@ -289,10 +369,13 @@ function MatchesTab({
 function AdminPanelTab({
   tournament,
   currentRole,
+  lang,
 }: {
   tournament: Tournament;
   currentRole: UserRole;
+  lang: 'ar' | 'en';
 }) {
+  const d = (key: keyof typeof DICT) => DICT[key][lang];
   const [rewardForm, setRewardForm] = useState({
     firstPlace: tournament.rewards?.firstPlace ?? '',
     secondPlace: tournament.rewards?.secondPlace ?? '',
@@ -309,8 +392,8 @@ function AdminPanelTab({
         <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center">
           <Shield className="w-7 h-7 text-red-400" />
         </div>
-        <p className="text-sm font-bold text-[#191c1c]">غير مصرح</p>
-        <p className="text-xs text-on-surface-variant/60">هذه اللوحة مخصصة للمالك والمسؤول فقط</p>
+        <p className="text-sm font-bold text-[#191c1c]">{d('unauthorized')}</p>
+        <p className="text-xs text-on-surface-variant/60">{d('unauthorizedSub')}</p>
       </div>
     );
   }
@@ -334,20 +417,20 @@ function AdminPanelTab({
       <div className="bg-linear-to-r from-slate-800 to-slate-700 rounded-2xl p-5 text-white">
         <div className="flex items-center gap-2 mb-1">
           <Settings className="w-4 h-4" />
-          <h3 className="font-bold text-sm">لوحة تحكم {currentRole === UserRole.Admin ? 'المسؤول' : 'المالك'}</h3>
+          <h3 className="font-bold text-sm">{currentRole === UserRole.Admin ? d('adminPanelAdmin') : d('adminPanelOwner')}</h3>
         </div>
-        <p className="text-white/60 text-xs">إدارة البطولة، المكافآت، والإعدادات المتقدمة</p>
+        <p className="text-white/60 text-xs">{d('adminSub')}</p>
       </div>
 
       {/* Quick Actions (Owner / Admin) */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {[
-          { icon: <Pencil className="w-4 h-4" />, label: 'تعديل البطولة', color: 'text-blue-600 bg-blue-50 hover:bg-blue-100' },
-          { icon: <Users className="w-4 h-4" />, label: 'إدارة الفرق', color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' },
-          { icon: <Trophy className="w-4 h-4" />, label: 'إجراء القرعة', color: 'text-amber-600 bg-amber-50 hover:bg-amber-100' },
-          { icon: <Shield className="w-4 h-4" />, label: 'جدول المباريات', color: 'text-purple-600 bg-purple-50 hover:bg-purple-100' },
+          { icon: <Pencil className="w-4 h-4" />, label: d('editTourney'), color: 'text-blue-600 bg-blue-50 hover:bg-blue-100' },
+          { icon: <Users className="w-4 h-4" />, label: d('manageTeams'), color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' },
+          { icon: <Trophy className="w-4 h-4" />, label: d('doDraw'), color: 'text-amber-600 bg-amber-50 hover:bg-amber-100' },
+          { icon: <Shield className="w-4 h-4" />, label: d('matchSchedule'), color: 'text-purple-600 bg-purple-50 hover:bg-purple-100' },
           ...(currentRole === UserRole.Admin
-            ? [{ icon: <Trash2 className="w-4 h-4" />, label: 'حذف البطولة', color: 'text-red-600 bg-red-50 hover:bg-red-100' }]
+            ? [{ icon: <Trash2 className="w-4 h-4" />, label: d('deleteTourney'), color: 'text-red-600 bg-red-50 hover:bg-red-100' }]
             : []
           ),
         ].map((action, i) => (
@@ -365,15 +448,15 @@ function AdminPanelTab({
       {currentRole === UserRole.Admin && (
         <div className="bg-white rounded-2xl border border-[#e1e3e1] p-5 shadow-sm space-y-4">
           <h3 className="font-bold text-[#191c1c] text-sm flex items-center gap-2">
-            <Gift className="w-4 h-4 text-amber-500" /> تحديد جوائز البطولة
+            <Gift className="w-4 h-4 text-amber-500" /> {d('setRewards')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
-              { key: 'firstPlace', label: '🥇 جائزة المركز الأول' },
-              { key: 'secondPlace', label: '🥈 جائزة المركز الثاني' },
-              { key: 'thirdPlace', label: '🥉 جائزة المركز الثالث' },
-              { key: 'theBestPlayer', label: '⭐ أفضل لاعب' },
-              { key: 'theBestGoalkeeper', label: '🧤 أفضل حارس مرمى' },
+              { key: 'firstPlace', label: d('firstPlace') },
+              { key: 'secondPlace', label: d('secondPlace') },
+              { key: 'thirdPlace', label: d('thirdPlace') },
+              { key: 'theBestPlayer', label: '⭐ ' + d('bestPlayer') },
+              { key: 'theBestGoalkeeper', label: '🧤 ' + d('bestGK') },
             ].map((field) => (
               <div key={field.key} className="space-y-1">
                 <label className="text-[11px] font-semibold text-on-surface-variant">
@@ -381,7 +464,6 @@ function AdminPanelTab({
                 </label>
                 <input
                   type="text"
-                  placeholder="مثال: 10,000 جنيه"
                   value={rewardForm[field.key as keyof typeof rewardForm]}
                   onChange={(e) =>
                     setRewardForm((prev) => ({ ...prev, [field.key]: e.target.value }))
@@ -393,7 +475,7 @@ function AdminPanelTab({
           </div>
           {rewardSuccess && (
             <p className="text-xs text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2 flex items-center gap-1.5 border border-emerald-200">
-              <CheckCircle2 className="w-3.5 h-3.5" /> تم حفظ الجوائز بنجاح!
+              <CheckCircle2 className="w-3.5 h-3.5" /> {d('rewardsSaved')}
             </p>
           )}
           <button
@@ -405,7 +487,7 @@ function AdminPanelTab({
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                <Gift className="w-4 h-4" /> حفظ الجوائز
+                <Gift className="w-4 h-4" /> {d('saveRewards')}
               </>
             )}
           </button>
@@ -416,7 +498,7 @@ function AdminPanelTab({
       <div className="bg-white rounded-2xl border border-[#e1e3e1] p-5 shadow-sm">
         <h3 className="font-bold text-[#191c1c] text-sm flex items-center gap-2 mb-3">
           <Users className="w-4 h-4 text-primary" />
-          الفرق المسجلة ({tournament.registeredTeamsCount})
+          {d('registeredTeams')} ({tournament.registeredTeamsCount})
         </h3>
         {tournament.groups && tournament.groups.length > 0 ? (
           <div className="space-y-2">
@@ -430,14 +512,14 @@ function AdminPanelTab({
                 </div>
                 <p className="text-sm font-bold text-[#191c1c] flex-1">{team.name}</p>
                 <span className="text-[10px] font-bold text-primary bg-[#e8f5e9] px-2 py-0.5 rounded-full">
-                  مقبول
+                  {d('accepted')}
                 </span>
               </div>
             ))}
           </div>
         ) : (
           <p className="text-xs text-on-surface-variant/60 text-center py-4">
-            لا توجد فرق مسجلة بعد
+            {d('noTeamsYet')}
           </p>
         )}
       </div>
@@ -458,8 +540,22 @@ export function TournamentDetails() {
     setLoadingTournament,
     setTournamentError,
     currentRole,
-    openRegisterModal,
   } = useTournamentState();
+
+  const { lang } = useLanguage();
+  const isAr = lang === 'ar';
+  const d = (key: keyof typeof DICT) => DICT[key][lang];
+
+  const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
+    { id: 'overview', label: d('tabOverview'), icon: <BarChart3 className="w-3.5 h-3.5" /> },
+    { id: 'groups',   label: d('tabGroups'),  icon: <Layers className="w-3.5 h-3.5" /> },
+    { id: 'bracket',  label: d('tabBracket'),      icon: <Trophy className="w-3.5 h-3.5" /> },
+    { id: 'matches',  label: d('tabMatches'),  icon: <Shield className="w-3.5 h-3.5" /> },
+    { id: 'admin',    label: d('tabAdmin'), icon: <Settings className="w-3.5 h-3.5" /> },
+  ];
+
+  // Navigation to new full-page join flow
+  const navigateToJoin = () => navigate(`/tournaments/${tournament?.id}/join`);
 
   const [activeTab, setActiveTab] = useState<TabId>('overview');
 
@@ -496,10 +592,10 @@ export function TournamentDetails() {
 
   if (isLoadingTournament) {
     return (
-      <div className="min-h-screen bg-[#f6f8f7] flex items-center justify-center" dir="rtl">
+      <div className={`min-h-screen bg-[#f6f8f7] flex items-center justify-center ${isAr ? 'font-ar' : 'font-en'}`} dir={isAr ? 'rtl' : 'ltr'}>
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          <p className="text-sm font-bold text-on-surface-variant">جار تحميل تفاصيل البطولة...</p>
+          <p className="text-sm font-bold text-on-surface-variant">{d('loadingDetail')}</p>
         </div>
       </div>
     );
@@ -507,25 +603,32 @@ export function TournamentDetails() {
 
   if (!tournament) {
     return (
-      <div className="min-h-screen bg-[#f6f8f7] flex items-center justify-center" dir="rtl">
+      <div className={`min-h-screen bg-[#f6f8f7] flex items-center justify-center ${isAr ? 'font-ar' : 'font-en'}`} dir={isAr ? 'rtl' : 'ltr'}>
         <div className="text-center space-y-3">
-          <p className="text-base font-bold text-[#191c1c]">⚠️ البطولة غير موجودة</p>
+          <p className="text-base font-bold text-[#191c1c]">{d('notFound')}</p>
           <button
             onClick={() => navigate('/tournaments')}
             className="text-sm font-bold text-primary underline"
           >
-            العودة للقائمة
+            {d('backToList')}
           </button>
         </div>
       </div>
     );
   }
 
+  const STATUS_CONFIG: Record<TournamentStatus, { label: string; color: string; bg: string }> = {
+    [TournamentStatus.Upcoming]: { label: d('statusUpcoming'), color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-300' },
+    [TournamentStatus.Ongoing]:  { label: d('ongoingStatus'),  color: 'text-red-600',     bg: 'bg-red-50 border-red-300' },
+    [TournamentStatus.Finished]: { label: d('finishedStatus'), color: 'text-slate-500',   bg: 'bg-slate-100 border-slate-300' },
+    [TournamentStatus.Cancelled]:{ label: d('cancelledStatus'),color: 'text-red-400',     bg: 'bg-red-50 border-red-200' },
+  };
+
   const config = STATUS_CONFIG[tournament.status] ?? STATUS_CONFIG[TournamentStatus.Upcoming];
   const isLive = tournament.status === TournamentStatus.Ongoing;
 
   return (
-    <div className="min-h-screen bg-[#f6f8f7] pb-16" dir="rtl">
+    <div className={`min-h-screen bg-[#f6f8f7] pb-16 ${isAr ? 'font-ar' : 'font-en'}`} dir={isAr ? 'rtl' : 'ltr'}>
       {/* ── HERO ── */}
       <div
         className="relative h-64 md:h-80 bg-linear-to-br from-[#001a07] via-[#003d12] to-primary flex flex-col justify-end overflow-hidden"
@@ -543,7 +646,7 @@ export function TournamentDetails() {
         {isLive && (
           <div className="absolute top-4 inset-e-4 flex items-center gap-1.5 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg z-10">
             <span className="w-2 h-2 bg-white rounded-full animate-ping" />
-            جارية الآن
+            {d('ongoingStatus')}
           </div>
         )}
 
@@ -552,8 +655,8 @@ export function TournamentDetails() {
             onClick={() => navigate('/tournaments')}
             className="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-bold mb-4 transition-colors"
           >
-            <ArrowRight className="w-3.5 h-3.5" />
-            العودة للبطولات
+            {isAr ? <ArrowRight className="w-3.5 h-3.5" /> : <ArrowLeft className="w-3.5 h-3.5" />}
+            {d('backToTourneys')}
           </button>
 
           <div className="flex items-end justify-between gap-4">
@@ -567,7 +670,7 @@ export function TournamentDetails() {
               <div className="flex items-center gap-3 text-white/70 text-xs font-medium">
                 <span className="flex items-center gap-1">
                   <Users className="w-3.5 h-3.5" />
-                  {tournament.registeredTeamsCount}/{tournament.numberOfTeams} فريق
+                  {tournament.registeredTeamsCount}/{tournament.numberOfTeams} {d('teamSuffix')}
                 </span>
                 <span className="flex items-center gap-1">
                   <Trophy className="w-3.5 h-3.5 text-amber-400" />
@@ -575,7 +678,7 @@ export function TournamentDetails() {
                 </span>
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5" />
-                  {tournament.type}
+                  {translateFieldType(tournament.type, lang)}
                 </span>
               </div>
             </div>
@@ -583,11 +686,11 @@ export function TournamentDetails() {
             {/* CTA Button */}
             {canJoin && (
               <button
-                onClick={openRegisterModal}
+                onClick={navigateToJoin}
                 className="shrink-0 bg-primary hover:bg-[#005318] text-white font-black text-sm px-5 py-2.5 rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center gap-2"
               >
                 <Trophy className="w-4 h-4" />
-                انضم الآن
+                {d('joinNow')}
               </button>
             )}
           </div>
@@ -616,8 +719,8 @@ export function TournamentDetails() {
 
         {/* Tab Content */}
         <div>
-          {activeTab === 'overview' && <OverviewTab tournament={tournament} />}
-          {activeTab === 'groups' && <GroupsTab tournament={tournament} />}
+          {activeTab === 'overview' && <OverviewTab tournament={tournament} lang={lang} />}
+          {activeTab === 'groups' && <GroupsTab tournament={tournament} lang={lang} />}
           {activeTab === 'bracket' && (
             <BracketView
               matches={tournament.matches ?? []}
@@ -625,21 +728,15 @@ export function TournamentDetails() {
             />
           )}
           {activeTab === 'matches' && (
-            <MatchesTab tournament={tournament} currentRole={currentRole} />
+            <MatchesTab tournament={tournament} currentRole={currentRole} lang={lang} />
           )}
           {activeTab === 'admin' && canManage && (
-            <AdminPanelTab tournament={tournament} currentRole={currentRole} />
+            <AdminPanelTab tournament={tournament} currentRole={currentRole} lang={lang} />
           )}
         </div>
       </div>
 
-      {/* Register Modal */}
-      <RegisterFormModal
-        tournamentId={tournament.id}
-        tournamentName={tournament.name}
-        price={tournament.price}
-        onSuccess={() => navigate('/tournaments')}
-      />
+
     </div>
   );
 }
